@@ -9,8 +9,8 @@ categories:
 tags:
     - Unity3D
     - Spherical Harmonics
-    - Diffuse / Irradiance
-    - Specular / Radiance
+    - Diffuse
+    - Specular
 weight: 1
 ---
 
