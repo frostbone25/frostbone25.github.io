@@ -16,7 +16,7 @@ weight: 1       # You can add weight to some posts to override the default sorti
 ---
 
 
-Sharing my notes, and experiments with optimizing my real-time Global Illumination lighting buffers. The main goal is to reduce the rendering cost while maximizing final image quality and stability.
+Sharing personal my notes, and experiments with optimizing my real-time Global Illumination lighting buffers. The main goal is to reduce the rendering cost while maximizing final image quality and stability.
 
 ![final-rendered-image](content/final-rendered-image.png)
 *[Japanese Urban City Night Pack Environment](https://www.fab.com/listings/ce956075-e76c-4374-94a7-ea6226ae00de) in Unity*
@@ -669,14 +669,20 @@ Now, quick spoiler there is still a couple of more additional stages needed to i
 
 Remember that context wise we are in a game setting *(or a real-time context)*. The camera will be moving and changing, so will the scene... so how does our work hold up when the camera starts to move?
 
-![vct-8th-raw](content/vct-8th-raw.gif)
+<p float="left">
+    <img src="content/vct-8th-raw.gif" width="100%" />
+</p>
+
 *1/8th Resolution (3 upsample passes)*
 
 Yikes! Not good at all. 
 
 There is a lot of flickering, and the lower we go resolution wise the worse the artifacts and flickering get...
 
-![vct-16th-raw](content/vct-16th-raw.gif)
+<p float="left">
+    <img src="content/vct-16th-raw.gif" width="100%" />
+</p>
+
 *1/16th Resolution (4 upsample passes)*
 
 This does make some sense... If you remember one of the tradeoffs I mentioned with reducing resolution is that since pixels become larger, that means when a pixel changes it's much more visible.
@@ -691,7 +697,10 @@ Fortunately the industry has come up with a way to resolve such an issue. The te
 
 I did go forward and implement this...
 
-![vct-8th-temporal-full](content/vct-8th-temporal-full.gif)
+<p float="left">
+    <img src="content/vct-8th-temporal-full.gif" width="100%" />
+</p>
+
 *1/8th Resolution (3 upsample passes) with Full Resolution Temporal Filtering*
 
 Ok good, this definetly solves a lot of the flickering!
@@ -718,7 +727,10 @@ Any artifacts brought on by the temporal filtering natrually would get blurred/s
 
 Though I also suspected that some of the flickering artifacts with the upsample would come back when we do the temporal filter at a lower resolution. Since now we can no longer fade pixel changes at a finer scale with the higher resolution to alleviate some of those flickers in the first place.
 
-![vct-8th-temporal-8th](content/vct-8th-temporal-8th.gif)
+<p float="left">
+    <img src="content/vct-8th-temporal-8th.gif" width="100%" />
+</p>
+
 *1/8th Resolution Temporal Filtering with 3 depth-normal aware upsample passes after.*
 
 Yep, so some of the flickering artifacts have came back, that makes sense since now we are no longer doing the temporal filter at full resolution. So it can't take care of some of the flickering artifacts brought on by the upsampling.
@@ -843,14 +855,20 @@ Ok interesting... I can actually see a lot less pixelation now compared to befor
 
 So how does this look in motion now?
 
-![vct-8th-downsampled](content/vct-8th-downsampled.gif)
+<p float="left">
+    <img src="content/vct-8th-downsampled.gif" width="100%" />
+</p>
+
 *1/8th Resolution (3 upsample passes)*
 
 Wow! Massive difference!
 
 We can see this gets more dramatic also when we reduce the resolution much further and pile up more progressive upsamples. It remains pretty stable temporally, even when we are as low as 1/16th resolution! 
 
-![vct-16th-downsampled](content/vct-16th-downsampled.gif)
+<p float="left">
+    <img src="content/vct-16th-downsampled.gif" width="100%" />
+</p>
+
 *1/16th Resolution (4 upsample passes)*
 
 Granted we can make out some funk in the quality. The pixelation does get more visible when we go lower, but of course that is because downsampling is not a perfect solution. Every solution introduces their own set of issues, but I find the issues here much more tame and less visible than temporal filtering artifacts like ghosting/trails that we saw before *(and being bound by temporal resolution)*. Importantly for me, the scene remains sharp even in motion.
