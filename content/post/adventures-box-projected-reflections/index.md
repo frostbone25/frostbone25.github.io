@@ -1,5 +1,5 @@
 ---
-title: Adventures into Box Projected Cubemap Reflections!
+title: Box Projected Cubemap Reflections
 description: Exploring and messing about with box projected cubemap reflections.
 slug: adventures-box-projected-reflections
 date: 2026-01-06 00:00:00+0000

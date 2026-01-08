@@ -1,5 +1,5 @@
 ---
-title: Adventures into Spherical Harmonics! Coefficent Precision
+title: Spherical Harmonics Coefficent Precision
 description: Exploring and messing about with Spherical Harmonics and Coefficent Precision.
 slug: adventures-spherical-harmonics-coefficent-precision
 date: 2025-07-15 00:00:00+0000

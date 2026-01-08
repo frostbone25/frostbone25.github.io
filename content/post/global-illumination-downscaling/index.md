@@ -1,5 +1,5 @@
 ---
-title: Adventures Into Global Illumination Downscaling
+title: Global Illumination Downscaling
 description: Sharing my notes, and experiments with optimizing my real-time Global Illumination lighting buffers.
 slug: adventures-global-illumination-downscaling
 date: 2026-01-07 00:00:00+0000
@@ -889,13 +889,7 @@ This is why temporal filtering is also attractive to some graphics programmers *
 
 Some even take it as far introducing "jittering". If you remember also from earlier when I described the inital problem of how we only picked 1 pixel out of a region of 8x8 pixels...
 
-**[INSERT EXAMPLE GRAPHIC HERE WITH A 1X1 PIXEL REGION AND 8X8 PIXEL REGION]**
-
-With jittering, we still ultimately choose 1 pixel from the region, but with the concept of time/temporal in the mix we actually change which pixel we choose within that region every frame.
-
-**[INSERT EXAMPLE GRAPHIC HERE WITH A 1X1 PIXEL REGION AND 8X8 PIXEL REGION AND DOING JITTERING]**
-
-You can see here across 4 frames we chose 4 different pixels from that region. Natrually the temporal filtering will blend these pixels together and we retain correctness.
+With jittering, we still ultimately choose 1 pixel from the region, but with the concept of time/temporal in the mix we actually change which pixel we choose within that region every frame. Across 4 frames we chose 4 different pixels from that region. Natrually the temporal filtering will blend these pixels together and we retain correctness.
 
 But that is still 4 pixels out of a total of 64 in that 8x8 region, we could introduce more jitter samples across time. But covering the full 64 samples across 64 frames requires a lot of temporal resolution. Temporal resolution that often we don't have, considering the common target framerate for games are 60 frames a second, and a lot can change in a second!
 
