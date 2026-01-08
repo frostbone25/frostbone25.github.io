@@ -5,9 +5,9 @@ slug: adventures-spherical-harmonics-coefficent-precision
 date: 2025-07-15 00:00:00+0000
 image: preview-screenshot.png
 categories:
-    - Unity3D
-tags:
     - Graphics
+tags:
+    - Unity3D
     - Spherical Harmonics
     - Diffuse / Irradiance
     - Specular / Radiance
