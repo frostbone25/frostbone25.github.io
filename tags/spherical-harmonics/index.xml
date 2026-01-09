@@ -1,0 +1,373 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Spherical Harmonics on David Matos</title><link>https://frostbone25.github.io/tags/spherical-harmonics/</link><description>Recent content in Spherical Harmonics on David Matos</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Tue, 15 Jul 2025 00:00:00 +0000</lastBuildDate><atom:link href="https://frostbone25.github.io/tags/spherical-harmonics/index.xml" rel="self" type="application/rss+xml"/><item><title>Spherical Harmonics Coefficent Precision</title><link>https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/</link><pubDate>Tue, 15 Jul 2025 00:00:00 +0000</pubDate><guid>https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/</guid><description>&lt;img src="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/preview-screenshot.png" alt="Featured image of post Spherical Harmonics Coefficent Precision" /&gt;&lt;p&gt;&lt;em&gt;By: David Matos&lt;/em&gt;&lt;/p&gt;
+&lt;h2 id="preface"&gt;&lt;a href="#preface" class="header-anchor"&gt;&lt;/a&gt;Preface
+&lt;/h2&gt;&lt;p&gt;So you have your Spherical Harmonic coefficents generated&amp;hellip; Cool! Now let&amp;rsquo;s say you are developing a system where you want to use spherical harmonics to retain spherical information across a wide area.&lt;/p&gt;
+&lt;p&gt;Good examples of this are a light probe system for determining the diffuse shading of an object at a specific position. Another one is visibility information to determine if something is occluded or not.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;The important thing to keep in mind here is that, especially depending on the amount of spherical harmonic orders you are using, and the context they are applied in, you may need to store a little or a lot.&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;The solution to handling large stacks of data is to reduce the size of it. Done either with compression or reducing precison. This is something I wanted to experiment with and explore as I have not seen any material online covering this, nor showing the consequences of compression in the context of spherical harmonics.&lt;/p&gt;
+&lt;p&gt;In my case I am exploring spherical harmonics in the context of holding diffuse light information so I require 3 components &lt;em&gt;(Red, Green, Blue / RGB)&lt;/em&gt; and I need to cover a value range beyond 1.0.&lt;/p&gt;
+&lt;p&gt;Now in a different example, like storing visibility information, you usually only need 1 component and a value range between 0 and 1 so the requirements are different. &lt;em&gt;(And would like to point out that consequences of less data precison would likely be less impactful here)&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Now depending on how you handle lighting in your engine/setup the range of light information can vary widely. In my case the range of light values with these HDRIs I&amp;rsquo;m testing go up to 5 at it&amp;rsquo;s highest. Now in some engines/setups if you are using a full HDR range with physical light units you may have value ranges that skyrocket past 5 so keep that in mind because you&amp;rsquo;ll need a datatype that can handle that full range or more.&lt;/p&gt;
+&lt;p&gt;Some Notes before we begin&amp;hellip;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;I tested signed values along with unsigned since spherical harmonic projection can usually generate coefficents with negative values, and this is usually refered to as ringing. So even results with unsigned were shown because I wanted to have a visual example of how it mangles things, but don&amp;rsquo;t forget about this phenomena when using spherical harmonics.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;Since we are in a lighting context it&amp;rsquo;s possible that you can use HDR value compression techniques here, however I have not in these tests.&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;In addition to reducing data precison/compression, depending on how you go about it you will most likely be trading processing cost for disk/memory usage. Keep this in mind and make sure to profile your project.&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Lets start by showing the highlights of the experiment (the rest of the result&amp;rsquo;s will be shown later).&lt;/p&gt;
+&lt;h3 id="float32-4-bytes--32-bits-original"&gt;&lt;a href="#float32-4-bytes--32-bits-original" class="header-anchor"&gt;&lt;/a&gt;Float32 [4 Bytes | 32 bits] (Original)
+&lt;/h3&gt;&lt;p&gt;We have 2 Order Spherical Harmonic Irradiance data. This requires a set of 9 float3&amp;rsquo;s &lt;em&gt;(RGB)&lt;/em&gt; coefficents. 9 float3&amp;rsquo;s is 27 floats total.&lt;/p&gt;
+&lt;p&gt;We also have 6 Order Spherical Harmonic Radiance data. This requires a set of 49 float3&amp;rsquo;s (RGB) coefficents. 49 float3&amp;rsquo;s is 147 floats total.&lt;/p&gt;
+&lt;p&gt;There are 4 bytes in a float so the sizes come about to&amp;hellip;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt;1
+&lt;/span&gt;&lt;span class="lnt"&gt;2
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-fallback" data-lang="fallback"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;2nd Order Irradiance/Diffuse = 4 * 27 = 108 bytes.
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;6th Order Radiance/Reflection = 4 * 147 = 588 bytes.
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;&lt;strong&gt;108 bytes&lt;/strong&gt; to store diffuse/irradiance spherical lighting information, and &lt;strong&gt;588 bytes&lt;/strong&gt; to store reflection/radiance spherical lighting information. Both with floating point precison, which yields a very large value range that is also signed. This is fairly standard but we can do better!&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/example-1-float.jpg"
+width="1375"
+height="939"
+srcset="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/example-1-float_hu_17b18f43a486dca.jpg 480w, https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/example-1-float_hu_61fe548067c8c62c.jpg 1024w"
+loading="lazy"
+alt="Float32 [4 Bytes | 32 bits]"
+class="gallery-image"
+data-flex-grow="146"
+data-flex-basis="351px"
+&gt;&lt;/p&gt;
+&lt;h3 id="half16-2-bytes--16-bits"&gt;&lt;a href="#half16-2-bytes--16-bits" class="header-anchor"&gt;&lt;/a&gt;Half16 [2 Bytes | 16 bits]
+&lt;/h3&gt;&lt;p&gt;A Half16 is 2 bytes, so that yields&amp;hellip;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt;1
+&lt;/span&gt;&lt;span class="lnt"&gt;2
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-fallback" data-lang="fallback"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;2nd Order Irradiance/Diffuse = 2 * 27 = 54 bytes.
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;6th Order Radiance/Reflection = 2 * 147 = 294 bytes.
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;The size/precison of the data is literally half of a float. This is a fairly common thing to do when floating point precison is not required and the values are still signed.&lt;/p&gt;
+&lt;p&gt;Checking the results visually, we can see that pretty much in all circumstances everything looks identical. Keep in mind that our light value ranges don&amp;rsquo;t exceed 5.0 so your results may vary.&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/example-2-half.jpg"
+width="1375"
+height="939"
+srcset="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/example-2-half_hu_6f39ecd19ae3d208.jpg 480w, https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/example-2-half_hu_d08da6d524350932.jpg 1024w"
+loading="lazy"
+alt="Half16 [2 Bytes | 16 bits]"
+class="gallery-image"
+data-flex-grow="146"
+data-flex-basis="351px"
+&gt;&lt;/p&gt;
+&lt;h3 id="signed-10-bit-decimal-2-4-bytes--32-bits-for-3-rgb-values"&gt;&lt;a href="#signed-10-bit-decimal-2-4-bytes--32-bits-for-3-rgb-values" class="header-anchor"&gt;&lt;/a&gt;Signed 10 Bit Decimal 2 [4 Bytes | 32 bits for 3 RGB Values]
+&lt;/h3&gt;&lt;p&gt;Lets go further, and this is what I was most curious to see. How does the reconstruction fall apart when there is a lack of precison.&lt;/p&gt;
+&lt;p&gt;Note that this will approach the territory where you need to watch for your value ranges. My computed coefficent ranges for the HDRIs I&amp;rsquo;ve tested against were &lt;code&gt;[-0.5f - 5.0f]&lt;/code&gt; roughly.&lt;/p&gt;
+&lt;p&gt;So I chose to reduce the values down to a signed 10 bit value. Which affords you &lt;code&gt;[-512, 511]&lt;/code&gt; value range. In my testing I also found that atleast 2 decimal places were needed to keep results looking fairly close to the original.&lt;/p&gt;
+&lt;p&gt;So with some basic compression math the actual range would be &lt;code&gt;[-5.12, 5.11]&lt;/code&gt;. You can pack these small 10 bit values into a full 32 bit (4 byte) value. &lt;code&gt;(R 10 | G 10 | B 10 | 2 unused)&lt;/code&gt;. You could also try something similar to D3Ds R11G11B10 format often used for HDR to squeeze a little extra data for some of the channels, but I wanted to keep things consistent here.&lt;/p&gt;
+&lt;p&gt;So 3 floats effectively compressed into 4 bytes, so that yields&amp;hellip;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt;1
+&lt;/span&gt;&lt;span class="lnt"&gt;2
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-fallback" data-lang="fallback"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;2nd Order Irradiance/Diffuse = 4 * 9 = 36 bytes.
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;6th Order Radiance/Reflection = 4 * 49 = 196 bytes.
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;This is about as low as we can get it in theory while trying to respect the HDR values we have. If we go any lower then we will just mangle the data &lt;em&gt;(you can see this happening later)&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/example-3-signed-10-2.jpg"
+width="1375"
+height="939"
+srcset="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/example-3-signed-10-2_hu_6240d2253fe1abc0.jpg 480w, https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/example-3-signed-10-2_hu_1730eef33cbc2661.jpg 1024w"
+loading="lazy"
+alt="Signed 10 Bit Decimal 2 [4 Bytes | 32 bits for 3 RGB Values]"
+class="gallery-image"
+data-flex-grow="146"
+data-flex-basis="351px"
+&gt;&lt;/p&gt;
+&lt;p&gt;I should note that these examples are the most basic and simple way to reduce/compress these kind of values. However I mentioned earlier that this boils down to effectively compressing HDR color data since we are in a lighting context. So if you wanted to get fancy you could employ concepts behind HDR compression i.e. like using RGBM, RGBE, or even LogLUV to get better results. But you need to keep in mind that depending on the data reduction/compression methods used, you will trade memory/space with processing power.&lt;/p&gt;
+&lt;p&gt;Now I&amp;rsquo;ll show the results with the many different variations I have&amp;hellip;&lt;/p&gt;
+&lt;h1 id="full-data-reduction-results"&gt;&lt;a href="#full-data-reduction-results" class="header-anchor"&gt;&lt;/a&gt;Full Data Reduction Results
+&lt;/h1&gt;&lt;p&gt;&lt;img src="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/1-Float32.jpg"
+width="1332"
+height="939"
+srcset="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/1-Float32_hu_32f689cbae150199.jpg 480w, https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/1-Float32_hu_a19a19bf711ce600.jpg 1024w"
+loading="lazy"
+alt="Float32"
+class="gallery-image"
+data-flex-grow="141"
+data-flex-basis="340px"
+&gt; &lt;img src="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/2-Half16.jpg"
+width="1332"
+height="939"
+srcset="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/2-Half16_hu_bbb01cb0faea1f8.jpg 480w, https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/2-Half16_hu_fa55fab08bdf2ff3.jpg 1024w"
+loading="lazy"
+alt="Half16"
+class="gallery-image"
+data-flex-grow="141"
+data-flex-basis="340px"
+&gt; &lt;img src="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/3-SignedInt16_Decimal4.jpg"
+width="1332"
+height="939"
+srcset="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/3-SignedInt16_Decimal4_hu_7b8a888e09203368.jpg 480w, https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/3-SignedInt16_Decimal4_hu_c2af1b48108779cf.jpg 1024w"
+loading="lazy"
+alt="Signed Int16 Decimal4"
+class="gallery-image"
+data-flex-grow="141"
+data-flex-basis="340px"
+&gt; &lt;img src="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/4-SignedInt16_Decimal3.jpg"
+width="1332"
+height="939"
+srcset="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/4-SignedInt16_Decimal3_hu_bf13e5ba68f09f30.jpg 480w, https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/4-SignedInt16_Decimal3_hu_42cb3c2ceecfb31b.jpg 1024w"
+loading="lazy"
+alt="Signed Int16 Decimal3"
+class="gallery-image"
+data-flex-grow="141"
+data-flex-basis="340px"
+&gt; &lt;img src="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/5-SignedInt15_Decimal3.jpg"
+width="1332"
+height="939"
+srcset="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/5-SignedInt15_Decimal3_hu_958be490fc380208.jpg 480w, https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/5-SignedInt15_Decimal3_hu_740ce752a8f6e68c.jpg 1024w"
+loading="lazy"
+alt="Signed Int15 Decimal3"
+class="gallery-image"
+data-flex-grow="141"
+data-flex-basis="340px"
+&gt; &lt;img src="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/6-SignedInt14_Decimal3.jpg"
+width="1332"
+height="939"
+srcset="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/6-SignedInt14_Decimal3_hu_35c2bea2ec850d0c.jpg 480w, https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/6-SignedInt14_Decimal3_hu_b45e757ab09b2121.jpg 1024w"
+loading="lazy"
+alt="Signed Int14 Decimal3"
+class="gallery-image"
+data-flex-grow="141"
+data-flex-basis="340px"
+&gt; &lt;img src="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/7-SignedInt14_Decimal2.jpg"
+width="1332"
+height="939"
+srcset="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/7-SignedInt14_Decimal2_hu_5cbb72902daa350f.jpg 480w, https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/7-SignedInt14_Decimal2_hu_40e63e9563edb9dd.jpg 1024w"
+loading="lazy"
+alt="Signed Int14 Decimal2"
+class="gallery-image"
+data-flex-grow="141"
+data-flex-basis="340px"
+&gt; &lt;img src="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/8-SignedInt13_Decimal2.jpg"
+width="1332"
+height="939"
+srcset="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/8-SignedInt13_Decimal2_hu_b6524d2b3038c3be.jpg 480w, https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/8-SignedInt13_Decimal2_hu_a05b696681bb1ac1.jpg 1024w"
+loading="lazy"
+alt="Signed Int13 Decimal2"
+class="gallery-image"
+data-flex-grow="141"
+data-flex-basis="340px"
+&gt; &lt;img src="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/9-SignedInt12_Decimal2.jpg"
+width="1332"
+height="939"
+srcset="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/9-SignedInt12_Decimal2_hu_f5a564f94d0a0937.jpg 480w, https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/9-SignedInt12_Decimal2_hu_fce24008e1ea1cb0.jpg 1024w"
+loading="lazy"
+alt="Signed Int12 Decimal2"
+class="gallery-image"
+data-flex-grow="141"
+data-flex-basis="340px"
+&gt; &lt;img src="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/10-SignedInt11_Decimal2.jpg"
+width="1332"
+height="939"
+srcset="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/10-SignedInt11_Decimal2_hu_f2ff82b6e58e12d1.jpg 480w, https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/10-SignedInt11_Decimal2_hu_86f5c88d1253bdda.jpg 1024w"
+loading="lazy"
+alt="Signed Int11 Decimal2"
+class="gallery-image"
+data-flex-grow="141"
+data-flex-basis="340px"
+&gt; &lt;img src="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/11-SignedInt10_Decimal2.jpg"
+width="1332"
+height="939"
+srcset="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/11-SignedInt10_Decimal2_hu_6b32e68df048e21d.jpg 480w, https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/11-SignedInt10_Decimal2_hu_28ab10111650c6b.jpg 1024w"
+loading="lazy"
+alt="Signed Int10 Decimal2"
+class="gallery-image"
+data-flex-grow="141"
+data-flex-basis="340px"
+&gt; &lt;img src="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/12-SignedInt10_Decimal1.jpg"
+width="1332"
+height="939"
+srcset="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/12-SignedInt10_Decimal1_hu_6dd6ff77687bab0c.jpg 480w, https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/12-SignedInt10_Decimal1_hu_3552de5c5a4590e2.jpg 1024w"
+loading="lazy"
+alt="Signed Int10 Decimal1"
+class="gallery-image"
+data-flex-grow="141"
+data-flex-basis="340px"
+&gt; &lt;img src="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/13-SignedInt9_Decimal2.jpg"
+width="1332"
+height="939"
+srcset="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/13-SignedInt9_Decimal2_hu_2aff313ef65bf932.jpg 480w, https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/13-SignedInt9_Decimal2_hu_2e1541e375273704.jpg 1024w"
+loading="lazy"
+alt="Signed Int9 Decimal2"
+class="gallery-image"
+data-flex-grow="141"
+data-flex-basis="340px"
+&gt; &lt;img src="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/14-SignedInt9_Decimal1.jpg"
+width="1332"
+height="939"
+srcset="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/14-SignedInt9_Decimal1_hu_47108917f682afbf.jpg 480w, https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/14-SignedInt9_Decimal1_hu_87000a9264bcc940.jpg 1024w"
+loading="lazy"
+alt="Signed Int9 Decimal1"
+class="gallery-image"
+data-flex-grow="141"
+data-flex-basis="340px"
+&gt; &lt;img src="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/15-SignedInt8_Decimal2.jpg"
+width="1332"
+height="939"
+srcset="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/15-SignedInt8_Decimal2_hu_cdcd7cef2a8aaa1c.jpg 480w, https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/15-SignedInt8_Decimal2_hu_911c6277a3485247.jpg 1024w"
+loading="lazy"
+alt="Signed Int8 Decimal2"
+class="gallery-image"
+data-flex-grow="141"
+data-flex-basis="340px"
+&gt; &lt;img src="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/16-SignedInt8_Decimal1.jpg"
+width="1332"
+height="939"
+srcset="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/16-SignedInt8_Decimal1_hu_9148ff45d7778a4b.jpg 480w, https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/16-SignedInt8_Decimal1_hu_bbb7157203f39bf9.jpg 1024w"
+loading="lazy"
+alt="SignedInt8 Decimal1"
+class="gallery-image"
+data-flex-grow="141"
+data-flex-basis="340px"
+&gt; &lt;img src="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/17-UnsignedInt16_Decimal4.jpg"
+width="1375"
+height="939"
+srcset="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/17-UnsignedInt16_Decimal4_hu_2eef70ccec41cc68.jpg 480w, https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/17-UnsignedInt16_Decimal4_hu_ee152d38ce8299.jpg 1024w"
+loading="lazy"
+alt="Unsigned Int16_Decimal4"
+class="gallery-image"
+data-flex-grow="146"
+data-flex-basis="351px"
+&gt; &lt;img src="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/18-UnsignedInt16_Decimal3.jpg"
+width="1375"
+height="939"
+srcset="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/18-UnsignedInt16_Decimal3_hu_d30b34250928cce6.jpg 480w, https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/18-UnsignedInt16_Decimal3_hu_f2b5806cc523e417.jpg 1024w"
+loading="lazy"
+alt="Unsigned Int16 Decimal3"
+class="gallery-image"
+data-flex-grow="146"
+data-flex-basis="351px"
+&gt; &lt;img src="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/19-UnsignedInt15_Decimal3.jpg"
+width="1375"
+height="939"
+srcset="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/19-UnsignedInt15_Decimal3_hu_dbb9c77c37017352.jpg 480w, https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/19-UnsignedInt15_Decimal3_hu_c66241b4e7c39f3f.jpg 1024w"
+loading="lazy"
+alt="Unsigned Int15 Decimal3"
+class="gallery-image"
+data-flex-grow="146"
+data-flex-basis="351px"
+&gt; &lt;img src="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/20-UnsignedInt14_Decimal3.jpg"
+width="1375"
+height="939"
+srcset="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/20-UnsignedInt14_Decimal3_hu_8eb8db91660cbe9b.jpg 480w, https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/20-UnsignedInt14_Decimal3_hu_330d9932c8744f4a.jpg 1024w"
+loading="lazy"
+alt="Unsigned Int14 Decimal3"
+class="gallery-image"
+data-flex-grow="146"
+data-flex-basis="351px"
+&gt; &lt;img src="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/21-UnsignedInt14_Decimal2.jpg"
+width="1375"
+height="939"
+srcset="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/21-UnsignedInt14_Decimal2_hu_7def99a9e08f4c37.jpg 480w, https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/21-UnsignedInt14_Decimal2_hu_8d503b223603a771.jpg 1024w"
+loading="lazy"
+alt="Unsigned Int14 Decimal2"
+class="gallery-image"
+data-flex-grow="146"
+data-flex-basis="351px"
+&gt; &lt;img src="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/22-UnsignedInt13_Decimal2.jpg"
+width="1375"
+height="939"
+srcset="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/22-UnsignedInt13_Decimal2_hu_3b381d2e246c617c.jpg 480w, https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/22-UnsignedInt13_Decimal2_hu_d7e519542fabc881.jpg 1024w"
+loading="lazy"
+alt="Unsigned Int13 Decimal2"
+class="gallery-image"
+data-flex-grow="146"
+data-flex-basis="351px"
+&gt; &lt;img src="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/23-UnsignedInt12_Decimal2.jpg"
+width="1375"
+height="939"
+srcset="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/23-UnsignedInt12_Decimal2_hu_1749f963dbf80b86.jpg 480w, https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/23-UnsignedInt12_Decimal2_hu_aab37979fd9bd9e8.jpg 1024w"
+loading="lazy"
+alt="Unsigned Int12 Decimal2"
+class="gallery-image"
+data-flex-grow="146"
+data-flex-basis="351px"
+&gt; &lt;img src="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/24-UnsignedInt11_Decimal2.jpg"
+width="1375"
+height="939"
+srcset="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/24-UnsignedInt11_Decimal2_hu_7f9ce8580a51cc81.jpg 480w, https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/24-UnsignedInt11_Decimal2_hu_d27d3afe4f56ef11.jpg 1024w"
+loading="lazy"
+alt="Unsigned Int11 Decimal2"
+class="gallery-image"
+data-flex-grow="146"
+data-flex-basis="351px"
+&gt; &lt;img src="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/25-UnsignedInt10_Decimal2.jpg"
+width="1375"
+height="939"
+srcset="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/25-UnsignedInt10_Decimal2_hu_6669e053b73b5e1e.jpg 480w, https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/25-UnsignedInt10_Decimal2_hu_c7a276ce5e331e19.jpg 1024w"
+loading="lazy"
+alt="Unsigned Int10 Decimal2"
+class="gallery-image"
+data-flex-grow="146"
+data-flex-basis="351px"
+&gt; &lt;img src="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/26-UnsignedInt10_Decimal1.jpg"
+width="1375"
+height="939"
+srcset="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/26-UnsignedInt10_Decimal1_hu_f0f79dd281cb134b.jpg 480w, https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/26-UnsignedInt10_Decimal1_hu_942d70a85df5c801.jpg 1024w"
+loading="lazy"
+alt="Unsigned Int10 Decimal1"
+class="gallery-image"
+data-flex-grow="146"
+data-flex-basis="351px"
+&gt; &lt;img src="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/27-UnsignedInt9_Decimal2.jpg"
+width="1375"
+height="939"
+srcset="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/27-UnsignedInt9_Decimal2_hu_d4eec1272fc25641.jpg 480w, https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/27-UnsignedInt9_Decimal2_hu_d56457ea55fe21d6.jpg 1024w"
+loading="lazy"
+alt="Unsigned Int9 Decimal2"
+class="gallery-image"
+data-flex-grow="146"
+data-flex-basis="351px"
+&gt; &lt;img src="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/28-UnsignedInt9_Decimal1.jpg"
+width="1375"
+height="939"
+srcset="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/28-UnsignedInt9_Decimal1_hu_117598efc2b25228.jpg 480w, https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/28-UnsignedInt9_Decimal1_hu_590c31598519588.jpg 1024w"
+loading="lazy"
+alt="Unsigned Int9 Decimal1"
+class="gallery-image"
+data-flex-grow="146"
+data-flex-basis="351px"
+&gt; &lt;img src="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/29-UnsignedInt8_Decimal2.jpg"
+width="1375"
+height="939"
+srcset="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/29-UnsignedInt8_Decimal2_hu_3c2d4fa03a64d421.jpg 480w, https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/29-UnsignedInt8_Decimal2_hu_9ed07831b38a81c9.jpg 1024w"
+loading="lazy"
+alt="Unsigned Int8 Decimal2"
+class="gallery-image"
+data-flex-grow="146"
+data-flex-basis="351px"
+&gt; &lt;img src="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/30-UnsignedInt8_Decimal1.jpg"
+width="1375"
+height="939"
+srcset="https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/30-UnsignedInt8_Decimal1_hu_b48fdd00601168e3.jpg 480w, https://frostbone25.github.io/p/adventures-spherical-harmonics-coefficent-precision/30-UnsignedInt8_Decimal1_hu_8ddf92a46cad437a.jpg 1024w"
+loading="lazy"
+alt="Unsigned Int8 Decimal1"
+class="gallery-image"
+data-flex-grow="146"
+data-flex-basis="351px"
+&gt;&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;By: David Matos&lt;/em&gt;&lt;/p&gt;</description></item></channel></rss>
