@@ -15,6 +15,7 @@ tags:
 weight: 1       # You can add weight to some posts to override the default sorting (date descending)
 ---
 
+*By: David Matos*
 
 Sharing personal my notes, and experiments with optimizing my real-time Global Illumination lighting buffers. The main goal is to reduce the rendering cost while maximizing final image quality and stability.
 
@@ -1400,3 +1401,5 @@ List of references that helped with my implementations and understanding.
 - [(hikiko-blog) depth_aware_upsampling_experiments](https://web.archive.org/web/20200819181017/https://eleni.mutantstargoat.com/hikiko/category/igalia/depth-aware-upsampling-experiments/)
 
 - [(patapom) SHPortal](https://patapom.com/blog/SHPortal/)
+
+*By: David Matos*

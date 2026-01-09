@@ -14,6 +14,8 @@ tags:
 weight: 1
 ---
 
+*By: David Matos*
+
 ## Preface
 So you have your Spherical Harmonic coefficents generated... Cool! Now let's say you are developing a system where you want to use spherical harmonics to retain spherical information across a wide area. 
 
@@ -100,3 +102,5 @@ Now I'll show the results with the many different variations I have...
 # Full Data Reduction Results
 
 ![Float32](1-Float32.jpg) ![Half16](2-Half16.jpg) ![Signed Int16 Decimal4](3-SignedInt16_Decimal4.jpg) ![Signed Int16 Decimal3](4-SignedInt16_Decimal3.jpg) ![Signed Int15 Decimal3](5-SignedInt15_Decimal3.jpg) ![Signed Int14 Decimal3](6-SignedInt14_Decimal3.jpg) ![Signed Int14 Decimal2](7-SignedInt14_Decimal2.jpg) ![Signed Int13 Decimal2](8-SignedInt13_Decimal2.jpg) ![Signed Int12 Decimal2](9-SignedInt12_Decimal2.jpg) ![Signed Int11 Decimal2](10-SignedInt11_Decimal2.jpg) ![Signed Int10 Decimal2](11-SignedInt10_Decimal2.jpg) ![Signed Int10 Decimal1](12-SignedInt10_Decimal1.jpg) ![Signed Int9 Decimal2](13-SignedInt9_Decimal2.jpg) ![Signed Int9 Decimal1](14-SignedInt9_Decimal1.jpg) ![Signed Int8 Decimal2](15-SignedInt8_Decimal2.jpg) ![SignedInt8 Decimal1](16-SignedInt8_Decimal1.jpg) ![Unsigned Int16_Decimal4](17-UnsignedInt16_Decimal4.jpg) ![Unsigned Int16 Decimal3](18-UnsignedInt16_Decimal3.jpg) ![Unsigned Int15 Decimal3](19-UnsignedInt15_Decimal3.jpg) ![Unsigned Int14 Decimal3](20-UnsignedInt14_Decimal3.jpg) ![Unsigned Int14 Decimal2](21-UnsignedInt14_Decimal2.jpg) ![Unsigned Int13 Decimal2](22-UnsignedInt13_Decimal2.jpg) ![Unsigned Int12 Decimal2](23-UnsignedInt12_Decimal2.jpg) ![Unsigned Int11 Decimal2](24-UnsignedInt11_Decimal2.jpg) ![Unsigned Int10 Decimal2](25-UnsignedInt10_Decimal2.jpg) ![Unsigned Int10 Decimal1](26-UnsignedInt10_Decimal1.jpg) ![Unsigned Int9 Decimal2](27-UnsignedInt9_Decimal2.jpg) ![Unsigned Int9 Decimal1](28-UnsignedInt9_Decimal1.jpg) ![Unsigned Int8 Decimal2](29-UnsignedInt8_Decimal2.jpg) ![Unsigned Int8 Decimal1](30-UnsignedInt8_Decimal1.jpg)
+
+*By: David Matos*

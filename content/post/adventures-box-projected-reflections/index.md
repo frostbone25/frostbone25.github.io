@@ -14,6 +14,8 @@ tags:
 weight: 1       # You can add weight to some posts to override the default sorting (date descending)
 ---
 
+*By: David Matos*
+
 My adventures into improving Box Projected Specular Reflections!
 
 [You can find the Github Repository Here!](https://github.com/frostbone25/Unity-Improved-Box-Projected-Reflections/tree/main)
@@ -576,3 +578,5 @@ enviormentReflection *= lerp(1.0f, specularOcclusionFactor, _ExperimentalSpecula
 - **[Calinou](https://github.com/Calinou)**: Improved Godot version of Contact Hardening Approximation.
 - **[lander-vr](https://github.com/lander-vr)**: Improved Godot version of Contact Hardening Approximation.
 - **[clayjohn](https://github.com/clayjohn)**: Improved Godot version of Contact Hardening Approximation.
+
+*By: David Matos*
