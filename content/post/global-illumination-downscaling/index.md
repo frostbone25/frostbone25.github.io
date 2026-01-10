@@ -47,22 +47,30 @@ Sharing personal my notes, and experiments with optimizing my real-time Global I
 
 ## Preface
 
+![vct-full-res](content/vct-full-res.png)
+*Full Resolution (1920 x 1080) Global Illumination using Voxel Cone Tracing*
+
 In a Real-Time rendering context, when computing any image-space effects, **it's very common as a performance measure to never compute those effects at full screen resolution.** The reason for this is simple, the more pixels we have, the more work we do.
 
 Say our final target resolution is ```1920 x 1080```. Using this resolution will equate to... ```1920 x 1080 = 2,073,600 pixels```
 
 That is a lot of pixels! Now what you need to consider is that when doing things at this target resolution *(for each of these 2 million pixels)* you are going to run a set of shader instructions/operations for every pixel, for the given effect.
 
+<p float="left">
+    <img src="content/code-sample.png" width="100%" />
+</p>
+
+*Left: Tonemapping Shader Code | Right: Voxel Cone Tracing Code*
+
+*NOTE: Yes it's not compiled, but even just looking at the source code we can see the sheer volume of work we are doing for the shader on the right compared to the one on the left.*
+
 For some light-weight effects like bloom, or tonemapping the amount of overall work that you'll be doing per pixel is fairly small. 
 
 However for more complicated effects like SSAO *(Screen-Space Ambient Occlusion)*, SSR *(Screen Space Reflections)*, or full on lighting buffers for Global Illumination *(either using Ray-Tracing, Voxel Cone-tracing, etc.)* The amount of overall work needed for those effects is significant. 
 
-![vct-full-res](content/vct-full-res.png)
-*Full Resolution Global Illumination (Voxel Cone Tracing)*
-
 The end result is that for a large amount of total pixels, you end up doing a large amount of work and your overall performance plummets.
 
-You can cut back on the amount of work you do per pixel, which is a viable strategy. Unfortunately though with most of these effects/algorithims you can only simplify it so much. The work is required in order to do the effect in the first place.
+Now you can cut back on the amount of work you do per pixel, which is a viable strategy. Simplify instructions, reduce operations, precompute certain complicated terms into textures or arrays, etc. Unfortunately though with most of these effects/algorithims you can only simplify it so much. The work is required in order to do the effect in the first place!
 
 So if you can't reduce the amount of work you do per-pixel, you can reduce the amount of pixels that we do work for in the first place. It's the easiest and also the most effective strategy.
 
@@ -87,14 +95,14 @@ Quarter Height: (540  / 2)  = 270
 Final Resolution: 480 x 270 = 129,600 pixels
 ```
 
-Sweet! From 500 thousand to now just a little over a 100 thousand pixels. That is a massive reduction, factor in the work needed for every pixel we end up with a pretty significant reduction in our final workload needed for the effect.
+Sweet! From 500 thousand to now just a little over a 100 thousand pixels. That is a massive reduction, factor in the work needed for every pixel and we end up with a pretty significant reduction in our final workload needed for the effect.
 
 *(NOTE: I would like to point out that there are definetly a lot of over-generalizations that is happening here with this example. Obviously there are some caveats and edge cases as always... but the concept remains the same. The less work you have to do, the better your performance).*
 
 However... as attractive as the numbers and instruction counts come out to be, this does come with it's own set of tradeoffs.
 
 ![vct-4th-point-raw](content/vct-4th-point-raw.png)
-*Raw 1/4th Resolution Diffuse Global Illumination (Voxel Cone Tracing)*
+*Raw 1/4th Resolution (480 x 270) Diffuse Global Illumination using Voxel Cone Tracing*
 
 Optimization is a game of tradeoffs, and reducing resolution will introduce some problems...
 - Increase the size of pixels, which means increased aliasing/pixelation artifacts.
@@ -103,7 +111,7 @@ Optimization is a game of tradeoffs, and reducing resolution will introduce some
 
 Yikes! 
 
-If your effects don't need to utilize scene depth/normal or any other related buffers this might be fine. But for my case where I'm calculating a lighting buffer that large parts of my project will be lit by... this is not good at all. We can't use this as is, so we need to do some work in order to make it usable. 
+If your effects don't need to utilize scene depth/normal or any other related buffers this might be fine. But for my case where I'm calculating a lighting buffer that large parts of my project will be lit by... this is not good at all. We can't use this as is, so we need to do some work in order to make this low resolution image usable.
 
 But wait... didn't we also mention that we were trying to reduce the workload in the first place per pixel? Yeah... and this is where the true difficulties of optimization come in. It's a game of tradeoffs, so you need to be careful when doing the work needed to make something usable, because you might end up doing more work in the end than it was to just render the effect at a better resolution in the first place!
 
@@ -197,7 +205,7 @@ Now lets explore what I did in regards to how I spread those pixels around...
 The most basic-basic upsampling we can do is just to duplicate/copy the original pixel we have into the neighboring regions *(via Point Filtering)*. 
 
 ![vct-4th-point-raw](content/vct-4th-point-raw.png)
-*1/4th Resolution (2 upsample passes)*
+*1/4th Resolution (480 x 270) with 2 upsample passes (to 1920 x 1080)*
 
 We can see this does not look good at all for what we ultimately want to achieve. Point filtering just simply copies the data we have into more regions, but it does not look good here. 
 
@@ -206,7 +214,7 @@ We get visible blocking and pixelation, and the colors themselves are not proper
 This can be improved by using bilinear filtering which will gradually "fade" between one pixel, and the next within a 2x2 pixel region.
 
 ![vct-4th-bilinear-raw](content/vct-4th-bilinear-raw.png)
-*1/4th Resolution (2 upsample passes)*
+*1/4th Resolution (480 x 270) with 2 upsample passes (to 1920 x 1080)*
 
 It's an improvement... It's certianly more desirable than the point filtering, but the blockiness is still very visible. Additionally the colors themselves are not properly aligned with the scene like it was with full resolution. 
 
@@ -217,9 +225,9 @@ We need to cover a wider pixel region!
 ### Upsampling - Wider Blur Filters
 
 ![vct-4th-gaussian9](content/vct-4th-gaussian9.png)
-*1/4th Resolution (2 upsample passes)*
+*1/4th Resolution (480 x 270) with 2 upsample passes (to 1920 x 1080)*
 
-Here I am showing off a 9-tap single-pass gaussian blur. 
+Here I am showing off a 9-tap single-pass gaussian blur. Rendering at a Quarter Resolution *(1/4th)* with 2 upsample passes, meaning this upsample blur gets applied twice *(at two pixel/resolution different scales)*.
 
 We can see that now the underlying effect is much smoother compared to bilinear filtering. The pixelation artifacts and blockiness are much less visible now. Awesome! 
 
@@ -242,16 +250,14 @@ float4 UpsampleGaussian9Tap(float2 uv, float2 texelSize)
 }
 ```
 
-I am using a 9-tap single-pass gaussian blur. Not multi-pass, just single pass but at a very small radius. You could use different variants like a box filter, or a smaller kernel like a 5-tap or a 7-tap hexagonal.
+I am using a 9-tap single-pass gaussian blur. Not multi-pass, just single pass but at a very small radius. You could use different variants like a box filter, or a smaller kernel like a 5-tap or a 7-tap hexagonal. We could go wider, which would help mitigate most of the pixelation/blockiness. Unfortunately though we still are left with one big problem. 
 
-But of course while we did mitigate most of the pixelation/blockiness, we still are left with the other problem with doing things at low resolution. 
-
-**That being that piels do not align with the underlying scene well at all.** The wider filtering we are doing here just looks like a wierd bloom or blur effect. None of the details of the scene are preserved and it will only get worse with lower and lower resolutions.
+**That being that pixels do not align with the scene well at all.** The wider filtering we are doing here just looks like a wierd bloom or blur effect. None of the edge or normal details of the scene are preserved and it only gets worse with lower and lower resolutions.
 
 ![vct-8th-gaussian9](content/vct-8th-gaussian9.png)
-*1/8th Resolution (3 upsample passes)*
+*1/8th Resolution (240 x 135) with 3 upsample passes (to 1920 x 1080)*
 
-We need to somehow more intelligently determine what spots will recieve more blur, and what spots will try to remain sharp. 
+Ok, so mabye instead of just spreading pixels around blindly, we need to control that spread. In order to control the spread we need to determine what spots will recieve a greater spread/blur, and what spots will remain sharp. 
 
 So how can we do this?
 
@@ -259,16 +265,16 @@ So how can we do this?
 
 Enter depth upsampling. 
 
-We build on the idea before where we need to spread our pixel across to more areas than just that 2x2 block. This fixes the pixelation/aliasing problems, **but we need to be smarter as to how to spread those pixels around.**
+We don't throw away what we did before, we just build on it. We need to spread our pixels across to more areas than just that 2x2 region, this mitigates pixelation/aliasing problems, **but we need to be smarter as to how to spread those pixels around.**
 
-Fortunately, due to the nature of this effect *(Diffuse Global Illumination)* we already have access to a depth buffer which we used initally to calculate lighting for the visible surfaces in the scene.
+Fortunately, due to the nature of this effect *(Diffuse Global Illumination)* we already have access to a depth buffer.
 
 ![full-res-depth](content/full-res-depth.png)
-*Raw Scene Depth*
+*Raw Scene Depth (1920 x 1080)*
 
-The depth buffer essentially tells us where surfaces are in the scene. Let's reuse it here to guide our upsampling filter!
+The depth buffer essentially tells us where surfaces are in the scene. We used it during our lighting calculations, so let's also reuse it here to guide our upsampling filter!
 
-Using the depth buffer we can determine roughly where there are continous smooth/flat surfaces, or if there are large gaps/discontinuities. 
+By sampling the depth buffer in the same fashion as we were sampling the color for blurring, we can calculate the differences and determine roughly where there are continous smooth/flat surfaces, or if there are large gaps/discontinuities within a pixel region. 
 
 ![graphic-depth-compare](content/graphic-depth-compare.png)
 
@@ -346,34 +352,36 @@ float4 UpsampleGaussian9TapDepthAware(float2 uv, float2 texelSize)
 }
 ```
 
-By using Depth upsampling here and weighting (multiplying) each of our taps based on how the depth changes, we can see how this affects our blur filter now...
+We use the calculated differences between the depth values to weigh *(multiply)* each of our color taps, and we can see how this affects our blur filter now...
 
 ![vct-4th-depth](content/vct-4th-depth.png)
-*1/4th Resolution (2 upsample passes)*
+*1/4th Resolution (480 x 270) with 2 upsample passes (to 1920 x 1080)*
 
-We can actually see some of original sharp edges of some of the objects in the scene coming back now!
+Sweet! We can actually see some of original sharp edges of some of the objects in the scene coming back now!
 
-For some effects like volumetric fog, or mabye even SSAO, this is usually where your work would end.
+This is the most common upsampling you will usually see with most depth-based effects, because it's simple and cheap. There are some derivatives and alternatives that do exist *(joint-bilateral comes to mind)*, but for some effects like volumetric fog, or even SSAO, this is usually where the work ends according to the many tutorials and articles I've found online... 
 
-But with something as complicated as calulating diffuse global illumination however, I discovered that this still wasn't quite convincing enough for me *(and mabye even for you)*. 
+Unfortunately I am not satisfied enough with the results here.
 
-The quality is certainly better than it was, but there were still large portions of the scene here where surfaces that originally had plenty of detail now get smeared over when we compare with the original expensive full resolution buffer.
+Especially for something as complicated as calulating diffuse global illumination like in here, this still wasn't convincing enough for me *(and mabye even for you)*. There will be portions in my project where most of the scene will be lit entirely by the global illumination buffer, and if we stick with this those areas will just look like a blobby mess. That would infuriate my artists seeing their hard work being crushed, and I don't want that!
+
+The quality is certainly better than it was without depth, but there were still large portions of the scene here where surfaces that originally had plenty of detail now get smeared over when we compare with the original expensive full resolution buffer.
 
 ![vct-full-res](content/vct-full-res.png)
-*Full Resolution (0 upsample passes)*
+*Full Resolution (1920 x 1080) with 0 upsample passes*
 
-So using depth helps, but it looks like we need more information about the scene in order to better spread our pixels around. Is there another attribute aside from just depth that we can utlize to help align/place pixels even more?
+So again using depth helps, but it looks like we need more information about the scene in order to better spread our pixels around. Is there another attribute aside from just depth that we can utlize to help align/place pixels even more?
 
 ### Upsampling - Depth and Normal Aware
 
-Enter depth-normal upsampling. 
+Enter depth-normal upsampling. Once again we build on the work we did before with the depth aware upsampling, but we add an additional attribute... a normal buffer.
 
-Once again we build on the idea before with depth aware upsampling. Now we add an additional attribute, so along with using the scene depth buffer, we will also use scene normal buffer to help more with retaining the edges of objects and even some normal mapped details. 
+The scene depth buffer helped us find and retain some of the geometry edges in the scene, but we will also use scene normal buffer to help with finding more geometry edges, and mabye even some normal mapped details *(as long as normal buffer is not reconstructed from depth)*. 
 
 Just like the depth buffer, we also used the normal buffer in our inital lighting calculations to find the orientation of a surface and calculate the lighting of that point. Lets reuse it again here to guide our upsample filtering.
 
 ![full-res-normal](content/full-res-normal.png)
-*Scene Normals ([0..1] range)*
+*Scene Normals [0, 1] range (1920 x 1080)*
 
 Normals tell us the orientation of surfaces in a scene.
 
@@ -484,20 +492,20 @@ float4 UpsampleSmooth_Gaussian9Tap_DepthNormalAwareInterpolated(float2 uv, float
 Implementing it very similarly here with the depth, we just do 9 taps *(or whatever amount your underlying filter is doing)* with normal, then calculate the deviations that happen between the pixel regions and we weigh these with our depth.
 
 ![vct-4th-depthnormal](content/vct-4th-depthnormal.png)
-*1/4th Resolution (2 upsample passes)*
+*1/4th Resolution (480 x 270) with 2 upsample passes (to 1920 x 1080)*
 
 Nice! We can see now that this is a significant improvement over just depth-aware upsampling. Geometry edges are almost fully preserved now, and much less pixelation artifacts are visible at the same time.
 
-In fact this gives me enough confidence in that I might push things further by dropping the resolution to 1/8th and see how things hold up.
+This is looking much better, in fact this gives me enough confidence in that I might push things further by dropping the resolution to 1/8th and see how things hold up.
 
 ![vct-8th-depthnormal](content/vct-8th-depthnormal.png)
-*1/8th Resolution (3 upsample passes)*
+*1/8th Resolution (240 x 135) with 3 upsample passes (to 1920 x 1080)*
 
-Surpisingly well, some pixelation is more visible now of course but the depth-normal aware upsampling is doing a fantastic job of keeping all of the geometry edges and some of the normals sharp and visible.
+Surpisingly well, some pixelation is more visible now of course but the depth-normal aware upsampling is doing a fantastic job of keeping all of the geometry edges and some of the normals sharp and visible. It's a significant improvement!
 
-But even then... there are still some things that irk me even at 1/4th resolution, and the issues get more visible when dropping down to 1/8th now. Geometry edges are kept in-tact but most of the original normal-mapped material details of the scene are mostly gone now. Pixelation details also are starting to become even more visible.
+But... there are still some things that bug me even at 1/4th resolution *(480 x 270)*, and the issues get more visible when dropping down to 1/8th now. Geometry edges are kept in-tact but most of the original normal-mapped details of the scene are mostly gone now. Pixelation details also are starting to become even more visible.
 
-Is there a way to hide those pixelation artifacts some more, and mabye even bring back normal-mapped details?
+Is there a way to mitigate those pixelation artifacts some more, and mabye even bring back normal-mapped details?
 
 *Spoiler: Yes!*
 
@@ -505,11 +513,13 @@ Is there a way to hide those pixelation artifacts some more, and mabye even brin
 
 Now I would like to point out here that depending on your setup this depth-normal upsampling will cost an extra render target, which means more texture lookups to factor in this normal buffer read like you see in this implementation.
 
-An additional optimization here that you can that is to pack a singluar float4 render target with both depth *(16-bit half precision)* and normal *(encoded into a 2 channel using octahedron/spherical coordinates/etc).* 
+An additional optimization here that you can that is to pack a singular RGBA render target with both depth *(16-bit half precision)* and normal *(encoded into a 2 channel using octahedron/spherical coordinates/etc)* which gives you a depth-normal render target. 
 - RG: Depth (Half Precsion 16-bit)
 - BA: Normal (Encoded into 2 component 16-bit)
 
-This would reduce the texture fetches, at the expense of adding additional instructions for unpacking the render target for use in the filter. *(You are basically trading memory for ALU here. Fortunately with most modern hardware now being more capable, this is prefered so that way you are not bound by memory access speeds with texture reads)*.
+RGBA32 or even RGBA64 can work if you desire more precision/quality at the expense of memory. 
+
+Either way combining these into a single depth-normal render target would reduce the texture fetches by almost half, at the expense of adding additional instructions for unpacking the render target for use in the filter. *(You are basically trading memory for ALU here. Fortunately with most modern hardware now being more capable, this is prefered so that way you are not bound by memory access speeds with texture reads)*. I recommend doing this!
 
 ```HLSL
 //PUSEDO CODE
@@ -666,15 +676,15 @@ float4 UpsampleSmooth_Gaussian9Tap_DepthNormalAwareInterpolatedOptimized(float2 
 
 ## Temporal Instabilities
 
-Now, quick spoiler there is still a couple of more additional stages needed to improve the quality even more but I wanted to take a pause real quick because there is something very important here that we need to consider before moving forward.
+Now, quick spoiler there is still a couple of more additional stages needed to improve the spatial quality even more but I wanted to take a pause real quick because there is something very important here that we need to consider before moving forward...
 
-Remember that context wise we are in a game setting *(or a real-time context)*. The camera will be moving and changing, so will the scene... so how does our work hold up when the camera starts to move?
+**Remember that context wise we are in a game setting** *(or a real-time context)*. The camera will be moving and changing, so will the scene... **so how does our work hold up when the camera starts to move?**
 
 <p float="left">
     <img src="content/vct-8th-raw.gif" width="100%" />
 </p>
 
-*1/8th Resolution (3 upsample passes)*
+*1/8th Resolution (240 x 135) with 3 upsample passes (to 1920 x 1080)*
 
 Yikes! Not good at all. 
 
@@ -684,47 +694,52 @@ There is a lot of flickering, and the lower we go resolution wise the worse the 
     <img src="content/vct-16th-raw.gif" width="100%" />
 </p>
 
-*1/16th Resolution (4 upsample passes)*
+*1/16th Resolution (120 x 67) with 4 upsample passes (to 1920 x 1080)*
 
-This does make some sense... If you remember one of the tradeoffs I mentioned with reducing resolution is that since pixels become larger, that means when a pixel changes it's much more visible.
+This does make some sense... If you remember one of the tradeoffs I mentioned with reducing resolution is that since pixels become larger, that means when a pixel changes between frames it's much more visible. 
 
-One of the issues I noticed when even using just upsampling is that in motion I had a lot of aliasing and instability when reducing the resolution of the lighting. 
+Well that's not good. Seeing these problems might make you backtrack and not attempt to reduce the resolution any further, but then you'd lose out on the performance gains! We are trying to optimize this and make it run well, and look good!
 
-Not good at all... is there a way to fix this?
+So... is there a way to fix this flickering and improve quality at the same time?
 
 ### Temporal Instability Solutions: Temporal Filtering?
 
 Fortunately the industry has come up with a way to resolve such an issue. The technique is called temporal filtering. The idea is that you use previous frames and reproject into the current frame to gradually fade in any new pixel changes that occur. 
 
-I did go forward and implement this...
+Ok that sounds good, and I did go forward and implement this...
 
 <p float="left">
     <img src="content/vct-8th-temporal-full.gif" width="100%" />
 </p>
 
-*1/8th Resolution (3 upsample passes) with Full Resolution Temporal Filtering*
+*1/8th Resolution (240 x 135) with 3 upsample passes (to 1920 x 1080) and Full Resolution Temporal Filtering*
 
 Ok good, this definetly solves a lot of the flickering!
 
-But...
+**But...**
 
-It's still visible in some spots, and just like any solution this introduces it's own set of problems. Problems that I find quite destructive to my final image quality.
+Not only am I seeing some problems here that I find quite destructive to the final image quality, the flickering is still visible in some spots. Remember that optimization is a game of tradeoffs, temporal filtering just like any solution will introduce it's own set of problems. So what are they?
 
-1. **Temporal Filtering relies on good Temporal Resolution.** In english this means that the more frames you have, the better the quality/resolve. However! In games you often don't have the greatest temporal resolution anyway *(low FPS)*, and it can fluctuate! So the resolve worsens especially if you are on low spec hardware!
+1. **Temporal Filtering relies on good Temporal Resolution.** In english this means that the more frames you have, the better the quality/resolve because the differences between frames get much smaller *(and quicker)*. However! In games you often don't have the greatest temporal resolution anyway *(low FPS)*, and it can fluctuate! So the resolve worsens especially if you are on low spec hardware! *(or if your app is poorly optimized)*
 
 ![graphic-temproal-resolution](content/graphic-temproal-resolution.png)
 
 2. **Temporal Filtering introduces ghosting/trailing artifacts.** While additional attributes and conditions can be introduced to mitigate these artifacts, they will still be present in your image and you will have to constantly tweak and fight these artifacts that still muddy up your image quality in the end.
 
 ![vct-8th-temporal-full](content/vct-8th-temporal-full.png)
-*1/8th Resolution With Full Resolution Temporal Filtering (3 upsample passes)*
+*1/8th Resolution (240 x 135) with 3 upsample passes (to 1920 x 1080) and Full Resolution Temporal Filtering*
 
 ![vct-full-temporal-trails](content/vct-full-temporal-trails.png)
-*1/8th Resolution With Full Resolution Temporal Filtering, very visible trailing artifacts.*
+*Very visible trailing artifacts... eughhh!*
 
-Part of my attempts to fix this also was to try doing the temporal filtering at 1/8th resolution instead of at full resolution. 
+I mentioned that these trailing/ghosting artifacts can be mitigated in a number of ways...
+- Reducing the overall weight of the temporal filtering *(less frames being blended together)*.
+- Using a velocity buffer, so any regions with fast or rapid pixel changes would have a reduced temporal blending.
+- Using depth rejection, any pixels with drastically different depth values between different frames would have reduced temporal blending.
 
-Any artifacts brought on by the temporal filtering natrually would get blurred/smoothed out with the chained depth-normal aware upsampling that happens after. 
+I have tried all of these, but my issue with most of these is while they can help, in the end most of these boil down to selectively reducing the influence of the temporal filter in select parts of the image. So you will end up bringing back the flickering at the expense of fighting some of these temporal artifacts in the first place.
+
+I also tried a different strategy in an attempt to combat this problem, which was to try doing the temporal filtering at 1/8th resolution instead of at full resolution *(1920 x 1080)*. Any artifacts brought on by the temporal filtering natrually would get blurred/smoothed out with the depth-normal aware upsampling chain that happens after. 
 
 Though I also suspected that some of the flickering artifacts with the upsample would come back when we do the temporal filter at a lower resolution. Since now we can no longer fade pixel changes at a finer scale with the higher resolution to alleviate some of those flickers in the first place.
 
@@ -732,20 +747,21 @@ Though I also suspected that some of the flickering artifacts with the upsample 
     <img src="content/vct-8th-temporal-8th.gif" width="100%" />
 </p>
 
-*1/8th Resolution Temporal Filtering with 3 depth-normal aware upsample passes after.*
+*1/8th Resolution Lighting and Temporal Filtering (240 x 135) with 3 depth-normal aware upsample passes after (to 1920 x 1080)*
 
 Yep, so some of the flickering artifacts have came back, that makes sense since now we are no longer doing the temporal filter at full resolution. So it can't take care of some of the flickering artifacts brought on by the upsampling.
 
 As a plus atleast it seems the sharp trailing artifacts appear to be mostly gone now, but there seems to be some other oddities going on...
 
 ![vct-8th-temporal-8th](content/vct-8th-temporal-8th.png)
-*1/8th Resolution With Full Resolution Temporal Filtering (3 upsample passes)*
+*1/8th Resolution Lighting and Temporal Filtering (240 x 135) with 3 depth-normal aware upsample passes after (to 1920 x 1080)*
 
 It appears that the image overall has gotten a lot softer. In addition also I am still seeing ghosting trails behind objects like I was before.
 
 ![vct-8th-temporal-trails](content/vct-8th-temporal-trails.png)
+*Smoothed out sharp trailing artifacts from before, these ghosts are more visible thanks to the blurring*
 
-The only difference now is that it's less sharp and more blurred out. It is an improvement over doing it at full resolution but even with some more tweaking these ghosts are still very visible and contribute to a much softer final image.
+The only difference now is that it's less sharp and more blurred out. It is an improvement over doing it at full resolution but even with some more tweaking these ghosts are still very visible and contribute to a much softer final image. Not only that I still have flickering!
 
 As a result most of these problems were enough to make me want to avoid using Temporal Filtering altogether. It ended up creating more problems than it was intended to solve so temporal filtering for me is out of the window here. There has to be another way to somehow smooth out these results without resorting to temporal filtering and the problems it creates. 
 
@@ -755,7 +771,7 @@ Back to the drawing board...
 
 I was geuinely curious as where this source of instability/flickering was coming from and if there was any kind of solution to solve it. 
 
-The global illumination technique I am using here is called Voxel Cone Tracing. I won't explain what it does because that is not what this article is about *(and it would take too long)*, but the algorithim itself does not introduce any inherent noise or a large amount of instability/flickering with how I have it setup. 
+The global illumination technique I am using here is called Voxel Cone Tracing. I won't explain what it does because that is not what this article is about *(and it would take too long)*, but the algorithim itself does not introduce any inherent noise or a large amount of instability/flickering with how I have it setup *(no noise/stohastic sampling)*. 
 
 So the flickering/instability has to be coming from somewhere else... 
 
@@ -766,7 +782,7 @@ I decided to have a look at the other componets that get used to calculate the l
     <img src="content/normal-full-res-raw.gif" width="49%" />
 </p>
 
-*Left: Full Resolution Depth | Right: Full Resolution Scene Normals ([0..1] range)*
+*Left: Full Resolution Depth (1920 x 1080) | Right: Full Resolution Scene Normals [0, 1] range (1920 x 1080)*
 
 But wait, we are looking at the full resolution buffers here, and the lighting gets calculated at a reduced resolution. Ok, so let's look at the buffers when it's being used in that low resolution context directly...
 
@@ -775,7 +791,7 @@ But wait, we are looking at the full resolution buffers here, and the lighting g
     <img src="content/normal-8th-raw.gif" width="49%" />
 </p>
 
-*Left: 1/8th Resolution Depth | Right: 1/8th Resolution Scene Normals ([0..1] range)*
+*Left: 1/8th Resolution Depth (240 x 135) | Right: 1/8th Resolution Scene Normals [0, 1] range (240 x 135)*
 
 Interesting... there is a lot of flickering and instability happening here, why?
 
@@ -816,16 +832,9 @@ In my pipeline I introduce passes now where I downsample both scene normal buffe
 
 ![graphic-buffer-downsampling](content/graphic-buffer-downsampling.png)
 
-*NOTE: This was my inital downsampling pipeline, however an optimization [that I mentioned earlier](#optimization-bonus) that you can do is to pack both depth and normals into a single RGBA32 render target. This would save memory (and texture fetches later) and also simplify the pipeline here to just 1 render target that gets downsampled. Reducing draws and shader invocations, I recomend doing it.*
+*NOTE: This was my inital downsampling pipeline, however an optimization [that I mentioned earlier](#optimization-bonus) that you can do is to pack both depth and normals into a single RGBA32 render target. This would save memory (and texture fetches later) and also simplify the pipeline here to just 1 render target that gets downsampled. Reducing draws and shader invocations, I recommend doing it.*
 
-<p float="left">
-    <img src="content/8th-depth-downsample.png" width="49%" />
-    <img src="content/8th-normal-downsample.png" width="49%" />
-</p>
-
-*Left: 1/8th Resolution Scene Depth | Right: 1/8th Resolution Scene Normals ([0..1] range)*
-
-In my case I just use a very simple 2x2 downsample average. Different downsampling filters could likely be utilized here but I wanted to start simple.
+Now for my downsampling I just use a very simple 2x2 downsample average. Different downsampling filters could likely be utilized here but I wanted to start simple.
 
 ```HLSL
 float4 DownsampleAverage2x2(float2 uv, float2 texelSize)
@@ -838,19 +847,30 @@ float4 DownsampleAverage2x2(float2 uv, float2 texelSize)
 }
 ```
 
-So let's apply this downsample filter chain and check what the normal buffer looks like in motion now...
+<p float="left">
+    <img src="content/8th-depth-downsample.png" width="49%" />
+    <img src="content/8th-normal-downsample.png" width="49%" />
+</p>
+
+*Left: 1/8th Resolution Downsampled Scene Depth (240 x 135) | Right: 1/8th Resolution Downsampled Scene Normals [0, 1] range (240 x 135)*
+
+Applying the downsampling filter chain, we can see that our buffers look much softer now. Importantly I am no longer seeing any visible pixelation or aliasing artifacts in a still frame.
+
+Ok that's a good sign, now lets see how this looks in motion now...
 
 <p float="left">
     <img src="content/8th-depth-downsample.gif" width="49%" />
     <img src="content/normal-8th-downsampled.gif" width="49%" />
 </p>
 
-Ooooo! So after applying a downsample filter to our normal buffer *(and depth buffer)*, much of the flickering actually vanishes when looking at the buffers by itself. This is promising...
+*Left: 1/8th Resolution Downsampled Scene Depth (240 x 135) | Right: 1/8th Resolution Downsampled Scene Normals [0, 1] range (240 x 135)*
 
-I went ahead and applied the same downsampling process to the depth buffer as well. Now I'm left with these scene buffers downsampled to the resolution that the lighting gets calculated at, so lets use them now for calculating lighting *(and the upsampling stages)* and see what happens... *(Looking at the still frame first)*
+Ooooo! So after applying a downsample filter to our normal buffer *(and depth buffer)*, much of the flickering that we saw before now actually vanishes. This is promising...
+
+So now I'm left with these scene buffers downsampled to the resolution that the lighting gets calculated at *(1/8th, 240 x 135)*, so lets use them now for calculating lighting *(and the upsampling stages)* and see what happens... *(Looking at the still frame first)*
 
 ![vct-8th-downsampled](content/vct-8th-downsampled.png)
-*1/8th Resolution (3 upsample passes)*
+*1/8th Resolution (240 x 135), using Downsampled Buffers and with 3 upsample passes (to 1920 x 1080)*
 
 Ok interesting... I can actually see a lot less pixelation now compared to before even in a still frame, and the lighting results are slightly different. Some spots do appear wierder *(I'll explain why that is in a bit)* but for the most part everything still looks pretty good.
 
@@ -860,31 +880,35 @@ So how does this look in motion now?
     <img src="content/vct-8th-downsampled.gif" width="100%" />
 </p>
 
-*1/8th Resolution (3 upsample passes)*
+*1/8th Resolution (240 x 135), using Downsampled Buffers and with 3 upsample passes (to 1920 x 1080)*
 
-Wow! Massive difference!
+Wow, massive difference! This almost looks like the results we got when we implemented the full resolution temporal filtering! Granted there is still some flickering we can see, but there are no trails/ghosting artifacts that we have to deal with.
 
-We can see this gets more dramatic also when we reduce the resolution much further and pile up more progressive upsamples. It remains pretty stable temporally, even when we are as low as 1/16th resolution! 
+We can reduce the resolution much further and pile up more progressive upsamples to see how things hold up...
 
 <p float="left">
     <img src="content/vct-16th-downsampled.gif" width="100%" />
 </p>
 
-*1/16th Resolution (4 upsample passes)*
+*1/16th Resolution (120 x 67), using Downsampled Buffers and with 4 upsample passes (to 1920 x 1080)*
 
-Granted we can make out some funk in the quality. The pixelation does get more visible when we go lower, but of course that is because downsampling is not a perfect solution. Every solution introduces their own set of issues, but I find the issues here much more tame and less visible than temporal filtering artifacts like ghosting/trails that we saw before *(and being bound by temporal resolution)*. Importantly for me, the scene remains sharp even in motion.
+Not bad! It remains pretty stable temporally, even when we are as low as 1/16th resolution! 
 
-Still, I want to explore why our lighting looks a little different *(might even be considered worse in some areas)*.
+Of course it's not perfect. The flickering is much more noticable especially when we go to this low of a resolution, and we can make out some funk in the lighting quality. That's because downsampling is not a perfect solution. 
+
+Every solution introduces their own set of issues, but I find the issues here much more tame and less visible than temporal filtering artifacts like ghosting/trails that we saw before that we had to fight with *(and being bound by temporal resolution)*. Importantly for me, the scene remains sharp even in motion.
+
+Now earlier I mentioned that our lighting looks a little different *(might even be considered worse in some areas)*, I want to explore that further.
 
 ### Downsampling - Drawbacks
 
-With downsampling, we reduce a set of pixels down to one, and effectively construct a fresh and unique new pixel value. Ok sure that makes sense, that is what we were trying to do in order to gain temporal stability in the first place.
+With downsampling and using the averaging algorithim, we reduce a set of pixels down to one, and effectively construct a fresh and unique new pixel value. Ok sure that makes sense, that is what we were trying to do in order to gain temporal stability in the first place.
 
-But I want to explain the drawbacks of downsampling in this context, and why some graphics programmers shy away from doing this *(and for good reason)*.
+But this is why some graphics programmers might shy away from doing this *(and for good reason)*.
 
-The reason being that with downsampling, you are creating a fresh new pixel out of a set of original pixels. In the context of depth, you are taking a set of original depth values, are a creating a fresh new unqiue depth value. **A depth value that of which does not exist in the original depth buffer.** *(Same with the normal buffer)*
+The reason being that with downsampling *(and the averaging)*, you are creating a fresh new pixel out of a set of original pixels. In the context of depth, you are taking a set of original depth values, are a creating a fresh new unqiue depth value. **A depth value that of which does not exist in the original depth buffer.** *(Same with the normal buffer)*
 
-If you recall back to the basic math example from earlier...
+If you recall back to the basic averaging math example from earlier...
 
 ```
 4 5 4 4 4 6 5 4 7 6 6 4 (12 samples)
@@ -893,12 +917,12 @@ If you recall back to the basic math example from earlier...
 
 The final averaged value is 4.917, which is close to 5 but **4.917 is a value that never actually existed in the original set.**
 
-Technically this means that if you are doing a lighting calculation for example, you use depth to reconstruct the position of a pixel so you can calculate the lighting at that point. 
+Technically this means that if you are doing a lighting calculation, you use depth to reconstruct the position of a pixel so you can calculate the lighting at that point. 
 
 **When you introduce downsampling, that depth value actually changes so when you calculate position now, it actually gets shifted and that means the lighting at a given surface point is actually not 100% accurate.** It's in the wrong spot! Either its slightly pushed forward or slightly pushed backwards depending on the surrounding pixels of that region. In our image in some spots this can actually introduce a "halo" around some objects in the foreground.
 
 ![vct-8th-downsampled-halo](content/vct-8th-downsampled-halo.png)
-*1/8th Resolution (3 upsample passes)*
+*Visible halo-ing around the cone*
 
 This also applies to the normals as well, surface normals within an area get averaged to form a new normal value. This normal value is then shifted in a different direction leading to slightly different lighting results for some surfaces.
 
@@ -914,13 +938,15 @@ But that is still 4 pixels out of a total of 64 in that 8x8 region, we could int
 
 You could also try not dropping the resolution that far. For example just going down to a quarter resolution *(rather than 1/8th)* gives you a 4x4 pixel region of 4x4 = 16 pixels. Less samples that you need to cover, but still thats 16 frames of blending needed across time.
 
-An interesting solution that the industry is also adopting is a combination of these two ideas so to speak. This amounts to Spatio-Temporal upsampling and this interestingly actually starts leading into the core ideas behind upscalars like FSR, DLSS, Intel XeSS. Where you have a spatial component of the filter that takes care of smoothing out pixels across an area, and the temporal component takes care of smoothing out pixel changes across time.
+An interesting solution that the industry is also adopting is a combination of these two ideas so to speak. 
 
-However... as I pointed out, temporal filtering at large still introduces visual issues that I'm not a fan of so I would like to avoid it if I can.
+This amounts to things like Spatio-Temporal upsampling and this interestingly actually starts leading into the core ideas behind upscalars like FSR, DLSS, Intel XeSS. Where you have a spatial component of the filter that takes care of smoothing out pixels across an area, and the temporal component takes care of smoothing out pixel changes across time.
 
-So ultimately I just went forward with downsampling as my main solution for temporal stability as the gains were to significant to ignore. Outside of that I don't know any other techniques or solutions that could be employed. *(NOTE: If you do have a solution or know of one, PLEASE LET ME KNOW!)*.
+However... as I pointed out, temporal filtering at large still introduces visual issues that I'm not a fan of so I would like to avoid it if I can. I may apply TAA at the end of my final graphics pipeline but I don't want to apply a temporal pass to this or any other effects if I can help it. Doing that would stack the temporal artifacts you get by the end of the frame that TAA would have to cleanup *(and it may not clean it up completely)*, and I want to avoid that, so it's important that these effects look good and stable on their own.
 
-This doesn't apply just to depth of course, this applies to the other scene buffers that get downsampled as well. Normals will be shifted, and with the Specular buffer those values get shifted as well.
+But objectively, while the downsampling does help eliminate alot of the inital flickering. You could combine it with a light-weight temporal filter to cleanup the flickering completely.
+
+As for me I just went forward with downsampling as my main solution for temporal stability here as the gains were to significant to ignore. Outside of that I don't know any other techniques or solutions that could be employed here. *(NOTE: If you do have a solution or know of one, PLEASE LET ME KNOW!)*. 
 
 #### Temporal Solution Comparisons
 
@@ -929,30 +955,30 @@ This doesn't apply just to depth of course, this applies to the other scene buff
     <img src="content/vct-8th-downsampled.gif" width="49%" />
 </p>
 
-*Left: 1/8th Resolution With Full Resolution Temporal Filter | Right: 1/8th Resolution With Downsampled Buffers*
+*Left: 1/8th Resolution (240 x 135) With Full Resolution Temporal Filter (1920 x 1080) | Right: 1/8th Resolution (240 x 135) With Downsampled Buffers*
 
 <p float="left">
     <img src="content/vct-8th-raw.gif" width="49%" />
     <img src="content/vct-8th-downsampled.gif" width="49%" />
 </p>
 
-*Left: 1/8th Resolution No Downsampled Buffers | Right: 1/8th Resolution With Downsampled Buffers*
+*Left: 1/8th Resolution (240 x 135) No Downsampled Buffers | Right: 1/8th Resolution (240 x 135) With Downsampled Buffers*
 
 <p float="left">
     <img src="content/vct-16th-raw.gif" width="49%" />
     <img src="content/vct-16th-downsampled.gif" width="49%" />
 </p>
 
-*Left: 1/16th Resolution No Downsampled Buffers | Right: 1/16th Resolution With Downsampled Buffers*
+*Left: 1/16th Resolution (120 x 67) No Downsampled Buffers | Right: 1/16th Resolution (120 x 67) With Downsampled Buffers*
 
-So to conclude this section I want to share what the pipeline looks. You might have missed it but I also mentioned that the downsampled buffers also get used in each of the upsampling stages. They are all stored in the mip levels so with each progressive upsample we use the respective mip level *(that holds the downsampled render target)* which helps alot with improving temproal stability in the final image. We also pointed out that it improves the spatial quality as well reducing pixelation on the final frame.
+So to conclude this section I want to share what the pipeline looks. You might have missed it but I also mentioned that the downsampled buffers also get used in each of the upsampling stages. They are all stored in the mip levels so with each progressive upsample we use the respective mip level *(that holds the downsampled render target)* which helps alot with improving temporal stability in the final image. We also pointed out that it improves the spatial quality as well, reducing pixelation on the final frame.
 
-![vct-8th-downsampled](content/graphic-full-pipeline-after-downsampling.png)
+![graphic-full-pipeline-after-downsampling](content/graphic-full-pipeline-after-downsampling.png)
 
 ## Upsampling - How to go further?
 
 ![vct-8th-downsampled](content/vct-8th-downsampled.png)
-*1/8th Resolution (3 upsample passes)*
+*1/8th Resolution (240 x 135), using Downsampled Buffers and with 3 upsample passes (to 1920 x 1080)*
 
 Shifting gears back to improving the spatial quality of the lighting *(now with the temporal component at a decent spot)*, even with the downsampled buffers and the best upsampling I was able to find, this still was not convincing enough for me even at lower resolutions because surfaces still get smeared too much!
 
@@ -960,7 +986,7 @@ So we need to take a step back and think as to why this is really happening. Why
 
 Well when we do lighting, surface position matters a great deal. That is mostly already covered though fortunately thanks to the depth-aware upsampling that we do. 
 
-Another factor that significantly affects the lighting of a surface is it's orientation, or normal. The depth-normal-aware upsampling again help with this but it's still not enough... so what's missing?
+Another factor that significantly affects the lighting of a surface is it's orientation, or normal. The depth-normal-aware upsampling again helps with this but it's still not enough... so what's missing?
 
 Do we need another scene attribute?
 
@@ -969,23 +995,25 @@ Well for diffuse lighting we have the surface position, and the surface normal. 
 Sure lets try that. Most materials/objects in my project have an authored ambient occlusion map, let's try factoring that in. 
 
 ![scene-occlusion](content/scene-occlusion.png)
-*Full Resolution Scene Material Occlusion*
+*Full Resolution (1920 x 1080) Scene Material Occlusion*
 
-Applying occlusion by just multiplying the final lighting buffer with it.
+We apply occlusion just multiplying the final lighting buffer with it.
 
 ![vct-8th-downsampled-and-occlusion](content/vct-8th-downsampled-and-occlusion.png)
-*1/8th Resolution (3 upsample passes) + Full Resolution Material Occlusion*
+*1/8th Resolution (240 x 135), using Downsampled Buffers and with 3 upsample passes (to 1920 x 1080) + Full Resolution Material Occlusion*
 
-Ok... that helped, but it's not good enough. 
+Ok... that's not bad, it definetly helped! 
 
-We can still see underneath it that things are blurred and smeary, some objects in the scene still turn into a blobby mess. 
+But it's not good enough... *(you might be rolling your eyes at me by now, but bear with me :D)*
 
 ![vct-8th-downsampled-and-occlusion-zoomed](content/vct-8th-downsampled-and-occlusion-zoomed.png)
-*1/8th Resolution (3 upsample passes) + Full Resolution Material Occlusion*
+*1/8th Resolution (240 x 135), using Downsampled Buffers and with 3 upsample passes (to 1920 x 1080) + Full Resolution Material Occlusion*
 
-What's worse is that some object's in my project don't *(and wont)* have authored ambient occlusion maps, so those will be left out completely!
+We can still see underneath it that things are getting blurred and smeary. Occlusion is helping by adding some more detail to surfaces, but some objects in the scene are still turning into a blobby mess. 
 
-We don't have any other scene attributes we can really utilize here to push things further, so we are kind of stuck. We have to look deeper, and really examine why things are blurred and smeary.
+What's worse though is that some object's in my project don't *(and wont)* have authored ambient occlusion maps, so those will be left out completely! We don't have any other scene attributes we can really utilize here to push things further, so we are kind of stuck. 
+
+We have to look deeper, and really examine why things are blurred and smeary.
 
 Now conceptually for each pixel we only have a single color that we are juggling around a given image region. We are much more selective now as to where we place this color value. But it's only just a color value... mabye we need more than just 1 color value per pixel?
 
@@ -1025,22 +1053,42 @@ Things like occlusion of course could be used to help with shading just like we 
 ![sh0-occlusion](content/sh0-occlusion.png)
 *Spherical Harmonics Order 0 (1 total coefficent) + SSAO*
 
-But as we also saw and learned previously... 
-
-Occlusion, regardless of what kind of flavor we may be using here *(SSAO, Material Occlusion, Lightmaps, etc)* is still not enough. More importantly it does not solve the underlying problem of the smeary/blurry lighting. Again this is because we are dealing with just a single color for the lighting.
+But as we also saw and learned previously... Occlusion, regardless of what kind of flavor we may be using here *(SSAO, Material Occlusion, Lightmaps, etc)* is still not enough. More importantly **it does not solve the underlying problem of the smeary/blurry lighting**. Again this is because we are dealing with just a single color for the lighting.
 
 We need more information than just a single color from our lighting environment. So lets bump the order up so we can gather more data to better shade our scene! With Order 1 we add 3 extra coefficents that are oriented to a specific direction...
 
 ![spherical-harmonics-order-1](content/spherical-harmonics-graphic-order-1.png)
 *Spherical Harmonics Order 1 (3 coefficents this order introduces)*
 
-This is now where you see the upsides to using spherical harmonics, because each coefficent now essentially provides us with more detailed information about the lighting environment...
+This is now where you see the upsides to using spherical harmonics, because each coefficent now can provides us with more detailed information about the lighting environment...
 - **Spherical Harmonic Coefficent 0** *(L = 0, M = 0)*: Describes the average color of the whole lighting environment.
 - **Spherical Harmonic Coefficent 1** *(L = 1, M = -1)*: Describes the average left/right lighting color of the environment.
 - **Spherical Harmonic Coefficent 2** *(L = 1, M = 0)*: Describes the average top/down lighting color of the environment.
 - **Spherical Harmonic Coefficent 3** *(L = 1, M = 1)*: Describes the average forward/back lighting color of the environment.
 
-At shading time we take the coefficents, project them reconstruct the spherical harmonic enviornment and then sample using the surface normal. 
+At shading time, we take these calculated coefficients, project them to reconstruct the spherical harmonic environment, and then sample it using the surface normal.
+
+```HLSL
+float3 _IrradianceCoefficents0;
+float3 _IrradianceCoefficents1;
+float3 _IrradianceCoefficents2;
+float3 _IrradianceCoefficents3;
+
+float3 SphericalHarmonicsIrradiance(float3 vector_normalDirection)
+{
+    float3 sphericalHarmonicsIrradiance = float3(0, 0, 0);
+
+    //order 0
+    sphericalHarmonicsIrradiance += _IrradianceCoefficents0 * SphericalHarmonicBasis0(vector_normalDirection);
+
+    //order 1
+    sphericalHarmonicsIrradiance += _IrradianceCoefficents1 * SphericalHarmonicBasis1(vector_normalDirection);
+    sphericalHarmonicsIrradiance += _IrradianceCoefficents2 * SphericalHarmonicBasis2(vector_normalDirection);
+    sphericalHarmonicsIrradiance += _IrradianceCoefficents3 * SphericalHarmonicBasis3(vector_normalDirection);
+
+    return sphericalHarmonicsIrradiance;
+}
+```
 
 ![sh1](content/sh1.png)
 *Spherical Harmonics Order 1 (4 total coefficents)*
@@ -1211,10 +1259,48 @@ void VoxelConeTracing(uint3 id : SV_DispatchThreadID)
 
 I still retain all of the upsampling and filtering passes I had before, but I just do them with each of the SH render targets. *[(I also moved these to a compute shader)](#spherical-harmonic-optimizations-compute-shader)*
 
-After upsampling the SH render targets to full resolution, I do an additional final pass where we sample the SH lighting environment using the full resolution scene normal, and this is the result.
+After upsampling the SH render targets to full resolution, I do an additional final pass where we sample the SH lighting environment using the full resolution scene normal. The code for that just looks something like this...
+
+```HLSL
+float3 color_irradiance = float3(0, 0, 0);
+
+float4 color_SHA = SAMPLE_TEXTURE2D_X(_FinalIrradianceSHA, sampler_FinalIrradianceSHA, vector_uv);
+float4 color_SHB = SAMPLE_TEXTURE2D_X(_FinalIrradianceSHB, sampler_FinalIrradianceSHB, vector_uv);
+float4 color_SHC = SAMPLE_TEXTURE2D_X(_FinalIrradianceSHC, sampler_FinalIrradianceSHC, vector_uv);
+
+float3 color_irradiance_sh00 = float3(0, 0, 0);
+float3 color_irradiance_sh10 = float3(0, 0, 0); //y
+float3 color_irradiance_sh11 = float3(0, 0, 0); //z
+float3 color_irradiance_sh12 = float3(0, 0, 0); //x
+
+SphericalHarmonicsUnpackIrradiance(
+    //input color
+    color_SHA,
+    color_SHB,
+    color_SHC,
+
+    //output coefficents
+    color_irradiance_sh00,
+    color_irradiance_sh10, //y
+    color_irradiance_sh11, //z
+    color_irradiance_sh12 //x
+);
+
+//order 0
+color_irradiance += color_irradiance_sh00 * SphericalHarmonicBasis0(vector_normalDirection);
+
+//order 1
+color_irradiance += color_irradiance_sh10 * SphericalHarmonicBasis1(vector_normalDirection);
+color_irradiance += color_irradiance_sh11 * SphericalHarmonicBasis2(vector_normalDirection);
+color_irradiance += color_irradiance_sh12 * SphericalHarmonicBasis3(vector_normalDirection);
+
+//color_irradiance now contains the final lighting!
+```
+
+This is the final lighting result.
 
 ![vct-8th-sh](content/vct-8th-sh.png)
-*1/8th Resolution (3 upsample passes)*
+*1/8th Resolution (240 x 135) using Spherical Harmonics, Downsampled Buffers and 3 upsample passes (to 1920 x 1080)*
 
 Woah! We can see now that scene details are retained very well now. Normal maps and granular details are actually visible and no longer overly smeared, and all of the underlying of the scene artwork is kept in tact. 
 
@@ -1225,37 +1311,54 @@ More importantly also the final lighting now is properly convincing at the resol
     <img src="content/vct-8th-sh-zoomed.png" width="49%" />
 </p>
 
-*Left: 1/8th Resolution No SH + Occlusion | Right: 1/8th Resolution with SH*
+*Left: 1/8th Resolution (240 x 135) No SH + Occlusion | Right: 1/8th Resolution (240 x 135) with SH*
 
 That pipe I pointed out initally, well now we can make it out pretty well!
 
-We can take the occlusion term we had previously and multiply it with our final upsampled spherical harmonic lighting to get the final results.
+We have one more final step, because we still have our occlusion term from before. We can now use it and multiply it with our final upsampled spherical harmonic lighting to get the final lighting results.
 
 ![vct-8th-sh-and-occlusion](content/vct-8th-sh-and-occlusion.png)
-*1/8th Resolution + Full Resolution Occlusion (3 upsample passes)*
+*1/8th Resolution (240 x 135) using Spherical Harmonics, Downsampled Buffers and 3 upsample passes (to 1920 x 1080) + Full Resolution Material Occlusion*
+
+Voila! It looks pretty good to me. I can make out all of the geometry edges, and even the normal mapped scene details. Temporally it is also pretty stable now, and using the occlusion term here also adds a lot more detail and sharpens up other portions of the image.
 
 This is currently the best I've been able to come up with in regards to getting very good and usable results with very low resolution lighting input. Remember, this is all coming from lighting that is calculated at 1/8th screen resolution which originally would have looked like this.
 
 ![vct-8th-raw](content/vct-8th-raw.png)
-*1/8th Resolution Raw (No Upsampling/Downsampling)*
+*1/8th Resolution Raw (240 x 135) with no upsampling or downsampling*
 
-The best part also is that we can actually drop the resolution even lower, and details will still be mostly retained. 
+The best part also is that we can actually drop the resolution even lower, and details will still be almost fully retained.!
 
-*NOTE: These screenshots don't have occlusion term factored in.*
+![vct-16th-sh-occlusion](content/vct-16th-sh-occlusion.png)
+*1/16th Resolution (120 x 67) using Spherical Harmonics, Downsampled Buffers and 4 upsample passes (to 1920 x 1080) + Full Resolution Material Occlusion*
+
+![vct-32th-sh-occlusion](content/vct-32th-sh-occlusion.png)
+*1/32th Resolution (60 x 33) using Spherical Harmonics, Downsampled Buffers and 5 upsample passes (to 1920 x 1080) + Full Resolution Material Occlusion*
+
+#### Spherical Harmonic Comparisons
+
+*NOTE: These screenshots don't have occlusion term factored in, we are just comparing the raw upsampled voxel cone trace with and without spherical harmonics.*
+
+<p float="left">
+    <img src="content/vct-8th-downsampled.png" width="49%" />
+    <img src="content/vct-8th-sh.png" width="49%" />
+</p>
+
+*Left: 1/8th Resolution (240 x 135) No Spherical Harmonics (3 upsample passes) | Right: 1/8th Resolution (240 x 135) With Spherical Harmonics (3 upsample passes)*
 
 <p float="left">
     <img src="content/vct-16th-downsampled.png" width="49%" />
     <img src="content/vct-16th-sh.png" width="49%" />
 </p>
 
-*Left: 1/16th Resolution No Spherical Harmonics (4 upsample passes) | Right: 1/16th Resolution With Spherical Harmonics (4 upsample passes)*
+*Left: 1/16th (120 x 67) Resolution No Spherical Harmonics (4 upsample passes) | Right: 1/16th Resolution (120 x 67) With Spherical Harmonics (4 upsample passes)*
 
 <p float="left">
     <img src="content/vct-32th-downsampled.png" width="49%" />
     <img src="content/vct-32th-sh.png" width="49%" />
 </p>
 
-*Left: 1/32th Resolution No Spherical Harmonics (5 upsample passes) | Right: 1/32th Resolution With Spherical Harmonics (5 upsample passes)*
+*Left: 1/32th Resolution (60 x 33) No Spherical Harmonics (5 upsample passes) | Right: 1/32th Resolution (60 x 33) With Spherical Harmonics (5 upsample passes)*
 
 ### Spherical Harmonic Optimizations: Compute Shader
 
@@ -1330,7 +1433,7 @@ I also mentioned that I had 3 SH render targets. Which might not make sense cons
 
 You could have 4 render targets, but that is a bit wasteful memory wise. Turns out we can just pack those 4 float3's into 3 float4's with some basic swizzling. *(moving each of the components around)*
 
-NOTE: The render targets are RGBA64. Each component is 16 bit half precison, not 8 bit because we are dealing with lighting. We need HDR for proper shading results.
+NOTE: The render targets are RGBA64. Each component is 16 bit half precison, not 8 bit because we are dealing with lighting. We need HDR *(High Dynamic Range)* for proper shading results.
 
 1. RGBA Render Target 0
     - R: L0.r
@@ -1348,9 +1451,7 @@ NOTE: The render targets are RGBA64. Each component is 16 bit half precison, not
     - B: L1Z.g
     - A: L1Z.b
 
-Now currently I still utilize 3 Render Targets, but this can actually be taken much further as you can do some clever packing techniques to where you can shrink things down to 2 Render Targets. 
-
-Trading color accuracy for luminance, in this case the first Order 0 coefficent remains as is, but Order 1 coefficents store luminance rather than a full RGB color. 
+If you want also you might even go further and shrink things down to 2 Render Targets by trading color accuracy for luminance. In this case the first Order 0 coefficent remains a full RGB, but Order 1 coefficents store luminance rather than a full RGB color. 
 
 1. RGBA Render Target 0: (L0.r, L1.g, L1.b, L1X)
     - R: L0.r
