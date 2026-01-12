@@ -87,8 +87,8 @@ admin = ""
 adminLabel = ""
 
 [comments.utterances]
-repo = "https://github.com/frostbone25/frostbone25.github.io"
-issueTerm = "pathname"
+repo = "frostbone25/frostbone25.github.io"
+issueTerm = "url"
 label = "comment"
 
 [comments.remark42]
