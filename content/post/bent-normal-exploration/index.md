@@ -85,7 +85,7 @@ I won't write all of the possible questions, but these were the main ones questi
 
 #### Why should I bother using a bent normal map? 
 
-If you want to bump up the quality of your shading, without adding too much cost bent normals are a good way to start. In this post I share some cases where using bent normals that demonstrate the benifits of using bent normals. 
+If you want to bump up the quality of your shading, without adding too much cost bent normals are a good way to start. In this post I share a couple of the main cases where using bent normals has great benifits. 
 
 For instance using bent normals to shade objects from [global illumination](#bent-normals-use-case-diffuse-global-illumination) *(or indirect lighting)* sources like light probes, or using it to calculate a term for [specular occlusion](#bent-normals-use-case-specular-occlusion) to improve the quality of your specular/reflections.
 
@@ -131,7 +131,7 @@ Conceptually, Bent Normals are generated in almost the same exact way you calcul
 
 To help illustrate things, I will share some code from an offline tool I built where I could generate ambient occlusion for a material given a height map and a normal map. 
 
-*NOTE: I would like to point out here that the assumptions here was that this is only for a flat planar surface, not an actual object with a complex surface/mesh. Despite that though the underlying concepts I go over still remain the exact same.*
+*NOTE: I would like to point out the assumptions here was that this is only for a flat planar surface, not an actual object with a complex surface/mesh. Despite that though the underlying concepts I go over still remain the exact same.*
 
 ```HLSL
 float occlusion = 0.0f;
@@ -261,8 +261,8 @@ Once you have a bent normal map generated, you sample it just like another norma
 float3 texture_normalMap = SAMPLE_TEXTURE2D(_NormalMap, sampler_NormalMap, vector_uv).xyz;
 float3 texture_bentNormalMap = SAMPLE_TEXTURE2D(_BentNormalMap, sampler_BentNormalMap, vector_uv).xyz;
 
-float3 vector_tangentNormalDirection = texture_normalMap *= 2.0f - 1.0f; //scale from 0..1 to -1..1
-float3 vector_tangentBentNormalDirection = texture_bentNormalMap *= 2.0f - 1.0f; //scale from 0..1 to -1..1
+float3 vector_tangentNormalDirection = texture_normalMap * 2.0f - 1.0f; //scale from 0..1 to -1..1
+float3 vector_tangentBentNormalDirection = texture_bentNormalMap * 2.0f - 1.0f; //scale from 0..1 to -1..1
 
 float3 vector_worldNormalDirection = TransformTangentToWorld(vector_tangentNormalDirection, tangentToWorld);
 float3 vector_worldBentNormalDirection = TransformTangentToWorld(vector_tangentBentNormalDirection, tangentToWorld);
@@ -278,7 +278,9 @@ Most shading terms need to have access to surface normals in order for them to l
 
 Earlier I described that you can actually combine a normal map and a bent normal map into a single texture map. This saves you from doing an extra texture sample, and on memory since now you have 1 texture that contains both your normal and bent normal.
 
-This can be done by just simply omitting the Z/Blue channel from both of the normal maps, and combining them together into a single 4 component RGBA texture. The Z/Blue can be recalculated for both the normal and bent normal at runtime to complete the terms.
+This can be done by just simply omitting the Z/Blue channel from both of the normal maps, and combining them together into a single 4 component RGBA texture. 
+
+When it comes to sampling the texture, the Z/Blue can be recalculated for both the normal and bent normal at runtime to complete the terms.
 
 ```HLSL
 //normal and bent normal are packed together to a single texture map
@@ -309,7 +311,9 @@ The issue is that in real-time rendering, specular/reflections is often lacklust
 
 ![specular-occlusion-none](content/specular-occlusion-none.jpg)
 
-You can see that the materials on the objects here have a strange glowing apperance. The objects in this scene are lit purely with an HDRI Probe, which is certainly part of it. We could try to improve things by using a reflection probe that renders the scene objects in here. 
+You can see that the materials on the objects here have a strange glowing apperance. Yeugh!
+
+Now the objects in this scene are lit purely with an HDRI Probe, which is not the best case. We could try to improve things by using a reflection probe that renders the scene object themselves in here. 
 
 *NOTE: To show off the results here is what the scene looks looking at the specular/reflection term only.*
 
@@ -320,9 +324,9 @@ You can see that the materials on the objects here have a strange glowing appera
 
 *Left: HDRI Only | Right: Box Projected Reflection Probe with Rendered Objects*
 
-Using a reflection probe that reflects the objects in the scene certainly helped a bit, but we are still seeing a lot of glowing/leaking in places where there shouldn't be any. The reflection probe is parallax corrected so the ground plane is correct but unfortunately it can't accurately represent the more complex objects in the scene itself. What can we do?
+Using a reflection probe that reflects the objects in the scene certainly helped a bit, but we are still seeing a lot of glowing/leaking in places where there shouldn't be any! The reflection probe is parallax corrected so the ground plane is correct but unfortunately it can't accurately represent the more complex objects in the scene itself. What can we do?
 
-Fortunately there are a number of ways to solve this problem. The most common is using the ambient occlusion map we generated before and just multiplying the specular/reflections term by it. [Horizon Fading](https://marmosetco.tumblr.com/post/81245981087) is also another technique used to further darken things some more if the resulting surface normal goes past what it's supposed to.
+Fortunately there are a number of ways to solve this problem. The most common is using the ambient occlusion map we generated before and just multiplying the specular/reflections term by it. [Horizon Fading](https://marmosetco.tumblr.com/post/81245981087) is also another technique used in tandem to further darken things some more if the resulting surface normal goes past the vertex normal.
 
 ![specular-occlusion-usual](content/specular-occlusion-usual.png)
 
@@ -346,9 +350,11 @@ Enter specular occlusion with bent normals...
 The reflection across the board now appear much less prevelant and dark. That makes sense considering our scene mostly consists of rough materials here. Importantly though if I look in the problematic areas like before...
 
 <p float="left">
-    <img src="content/specular-occlusion-bent-closeup.png" width="49%" />
     <img src="content/specular-occlusion-usual-closeup.png" width="49%" />
+    <img src="content/specular-occlusion-bent-closeup.png" width="49%" />
 </p>
+
+*Left: Occlusion + [Horizon Fading](https://marmosetco.tumblr.com/post/81245981087) | Right: Bent Normal Specular Occlusion + [Horizon Fading](https://marmosetco.tumblr.com/post/81245981087)*
 
 The leaking that I described is almost completely gone now. The reflections of the wheel is fully blocked along with most of the chains and rings that are in the shadow side. Some of the detail above still has some leaking but it's much reduced. It feels way more plausible.
 
@@ -384,13 +390,13 @@ float GetSpecularOcclusionUsingBentNormal(half3 vector_reflectionDirection, floa
     float angleUnoccludedCone = acos(cosUnoccludedConeAngle);
 
     //approximate specular lobe cone derived from half-angle roughness
-    //float cosSpecularConeAngle  = exp2((-log(10.0f) / log(2.0f)) * (roughness * roughness)); //original
-    float cosSpecularConeAngle  = exp2(-LOG10_OVER_LOG2 * (roughness * roughness));
+    //float cosSpecularConeAngle = exp2((-log(10.0f) / log(2.0f)) * (roughness * roughness)); //original
+    float cosSpecularConeAngle = exp2(-LOG10_OVER_LOG2 * (roughness * roughness));
     float angleSpecularCone = acos(cosSpecularConeAngle);
 
     //angle between bent normal and reflection direction
-    float cosBentNormalToReflection  = dot(vector_bentNormal, vector_reflectionDirection);
-    float angleBentNormalToReflection  = acos(cosBentNormalToReflection);
+    float cosBentNormalToReflection = dot(vector_bentNormal, vector_reflectionDirection);
+    float angleBentNormalToReflection = acos(cosBentNormalToReflection);
     
     float intersectedArea = 0.0f;
 
@@ -420,7 +426,7 @@ float GetSpecularOcclusionUsingBentNormal(half3 vector_reflectionDirection, floa
 
 It's quite a few instructions, there are couple of approximations that do exist *([Fewes](https://github.com/Fewes/BakerBoy/blob/master/Assets/BakerBoy/Shaders/Lib/BakerBoyLighting.hlsl#526) or [Unity SRP Core](https://github.com/Unity-Technologies/Graphics/blob/master/Packages/com.unity.render-pipelines.core/ShaderLibrary/CommonLighting.hlsl#342))* but this is all where they mostly stem from.
 
-Now contrary to what you might think, this does more than just simply darken the final result. This specular occlusion actually has some intresting and accurate/plausible behaviors.
+Now contrary to what you might think, this does more than just simply darken the final result. This specular occlusion actually has some interesting and accurate/plausible behaviors.
 
 <p float="left">
     <img src="content/bent-occlusion-viewA.png" width="49%" />
@@ -438,7 +444,7 @@ Specular occlusion also varies with roughness. Rougher materials will have a smo
 
 You can see that as the material gets smoother it almost looks like you can see a rough self-reflection of the ring on the object. 
 
-Granted of course with this technique you won't get perfect self-reflections, but with most real-time graphics techniques this is good and plausible enough.
+Granted of course with this technique you won't get perfect self-reflections, but with most real-time graphics techniques this is good and plausible enough. The main goal here was to reduce specular/reflection leaking and this does a pretty good job with it.
 
 ## Bent Normals Use Case: Diffuse Global Illumination
 
