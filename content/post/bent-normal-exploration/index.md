@@ -62,7 +62,7 @@ Before getting into Bent Normals, you need to be familiar with Ambient Occlusion
 
 Ambient Occlusion is a technique used to calculate the occlusion/darkening of light in areas. It's intended to solve part of a bigger problem in rendering, that being Global Illumination. When objects get close to each other a soft shadowing or darkening effect starts to appear, this is because the light rays that are normally lighting the objects are now being blocked by each other. 
 
-In the occlusion map up above you can see that the rocks on the surface are mostly white, but as you look deper into the crevices and cracks the shadowing increases because there is more geometry around blocking light.
+In the occlusion map up above you can see that the rocks on the surface are mostly white, but as you look deeper into the crevices and cracks the shadowing increases because there is more geometry around blocking light.
 
 Now this final occlusion map texture is usually just a single-scalar value used to darken the final lighting. 
 
