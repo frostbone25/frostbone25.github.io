@@ -26,7 +26,29 @@ Sharing my personal notes and experimentation with modding contact shadows into 
 
 #### Table of Contents
 - [Preface](#preface)
+    - [Context](#context)
+    - [Lighting Solutions - Ray Tracing?](#lighting-solutions---ray-tracing)
+    - [Lighting Solutions - Increase Shadow Map Resolution?](#lighting-solutions---increase-shadow-map-resolution)
+    - [Lighting Solutions - Increase Shadow Map Cascades?](#lighting-solutions---increase-shadow-map-cascades)
+    - [Lighting Solutions - Shadow Map Caching?](#lighting-solutions---shadow-map-caching)
+    - [Lighting Solutions - Contact Shadows](#lighting-solutions---contact-shadows)
 - [Brief RenderDoc Breakdown](#brief-renderdoc-breakdown)
+- [Implementation](#implementation)
+- [Micro Shadows](#micro-shadows)
+- [Contact Shadows](#contact-shadows)
+    - [Limitations](#limitations)
+    - [Getting Good Results](#getting-good-results)
+    - [Naive Contact Shadows (World Space)](#naive-contact-shadows-world-space)
+    - [Optimization: Reduce Sample Counts](#optimization-reduce-sample-counts)
+    - [Quality Boost: Introduce Jitter (Blue Noise)](#quality-boost-introduce-jitter-blue-noise)
+    - [Optimization: Switching to Interleaved Gradient Noise (IGN)](#optimization-switching-to-interleaved-gradient-noise-ign)
+    - [Optimization: Clip Space](#optimization-clip-space)
+    - [Optimization: Early Sky Out](#optimization-early-sky-out)
+    - [Optimization: Further Sample Reduction](#optimization-further-sample-reduction)
+    - [Bonus: Dual Depth Sampling](#bonus-dual-depth-sampling)
+    - [Bonus: Depth Point Sampling](#bonus-depth-point-sampling)
+    - [Bonus: Checkerboard Rendering Optimization](#bonus-checkerboard-rendering-optimization)
+- [Final Results](#final-results)
 - [References / Sources](#references--sources)
 
 ## Preface
@@ -768,7 +790,7 @@ The idea is simple, we only do contact shadows for every other pixel within a 2x
 ![checkerboard-on.png](content/checkerboard-on.png)
 *Checkerboard On*
 
-### Final Results
+## Final Results
 
 With that we have sucessfully managed to implement contact shadows into FF7 Rebirth! 
 
@@ -785,14 +807,19 @@ Now with our final optimized results...
 
 ![contact-shadows-optimized-result.jpg](content/contact-shadows-optimized-result.jpg)
 
+It's looking better than ever! Now I do want to point out something very important, because in deferred rendering lights are shaded in full screen pixel draws usually. It means every light is shaded this way. So contact shadows can also be used for local lights for a similar cost as well to the directional lights, and arguably in some areas within rebirth this is the one place that would definetly give you the most bang for your buck.
+
+![local-light-original.jpg](content/local-light-original.jpg)
+*Original*
+
+![local-light-contacts.jpg](content/local-light-contacts.jpg)
+*Micro Shadows + Contact Shadowing for Local Light passes*
+
 Now this was done just through RenderDoc but there is a whole other part of this story...
 
 I built a shader injector mod, that allows me to actually take this modified RenderDoc shader, compile it and replace the original shader bytecode at runtime within the actual game so I could play with this modified shader during gameplay... and it's awesome!
 
-<video width="640" height="360" controls>
-  <source src="https://youtu.be/ta1WpIeoP1s" type="video/mp4">
-  Your browser does not support the video tag.
-</video>
+[![Shader Injector Mod Preview VIdeo](https://www.youtube.com/watch?v=ta1WpIeoP1s)](https://www.youtube.com/watch?v=ta1WpIeoP1s)
 
 # References / Sources
 List of references that helped with my implementations and understanding.
