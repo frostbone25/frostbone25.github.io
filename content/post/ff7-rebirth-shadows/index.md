@@ -50,6 +50,7 @@ Sharing my personal notes and experimentation with modding contact shadows into 
     - [Bonus: Checkerboard Rendering Optimization](#bonus-checkerboard-rendering-optimization)
 - [Final Results](#final-results)
 - [Video Preview](#video-preview)
+- [Timings on 1920x1080 and 3840x2160](#timings-on-1920x1080-and-3840x2160)
 - [References / Sources](#references--sources)
 
 ## Preface
