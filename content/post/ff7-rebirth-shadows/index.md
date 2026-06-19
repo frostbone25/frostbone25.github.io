@@ -1,5 +1,5 @@
 ---
-title: Final Fantasy 7 Rebirth: Contact Shadows
+title: Final Fantasy 7 Rebirth Contact Shadows Mod
 description: Sharing my personal notes and experimentation with modding contact shadows into FF7 Rebirth.
 slug: ff7-rebirth-contact-shadows
 date: 2026-06-19 00:00:00+0000
