@@ -1,6 +1,6 @@
 ---
 title: Final Fantasy 7 Rebirth Contact Shadows Mod
-description: Sharing my personal notes and experimentation with modding contact shadows into FF7 Rebirth.
+description: Sharing my personal notes and experimentation with modding contact shadows into FF7 Rebirth gameplay.
 slug: ff7-rebirth-contact-shadows
 date: 2026-06-19 00:00:00+0000
 image: content/contact-shadows-result.jpg
@@ -17,7 +17,7 @@ weight: 1       # You can add weight to some posts to override the default sorti
 
 *By: David Matos*
 
-Sharing my personal notes and experimentation with modding contact shadows into one of my most favorite games in recent memory, Final Fantasy 7 Rebirth.
+Sharing my personal notes and experimentation with modding contact shadows into one of my most favorite games in recent memory, Final Fantasy 7 Rebirth, into actual run-time gameplay *[(at the end)](#video-preview)*
 
 *NOTE: This will be updated as time goes on with any new or incorrect information.*
 
