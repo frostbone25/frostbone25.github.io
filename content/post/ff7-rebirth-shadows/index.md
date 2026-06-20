@@ -45,9 +45,9 @@ Sharing my personal notes and experimentation with modding contact shadows into 
     - [Optimization: Clip Space](#optimization-clip-space)
     - [Optimization: Early Sky Out](#optimization-early-sky-out)
     - [Optimization: Further Sample Reduction](#optimization-further-sample-reduction)
+    - [Bonus: Checkerboard Rendering Optimization](#bonus-checkerboard-rendering-optimization)
     - [Bonus: Dual Depth Sampling](#bonus-dual-depth-sampling)
     - [Bonus: Depth Point Sampling](#bonus-depth-point-sampling)
-    - [Bonus: Checkerboard Rendering Optimization](#bonus-checkerboard-rendering-optimization)
 - [Final Results](#final-results)
 - [Video Preview](#video-preview)
 - [Timings on 1920x1080 and 3840x2160](#timings-on-1920x1080-and-3840x2160)
@@ -250,7 +250,7 @@ This occurs almost near the end of the pipeline *(the flag on the timeline is wh
     <img src="content/directionalshadowmap.jpg" width="100%" />
 </p>
 
-*Shadow Map Draws: Rendering of the world through the perspective of some lights for shadowmaps. In this case the sun/directional light*
+*Shadow Map Draws: Rendering of the world through the perspective of some lights for shadowmaps (In this case the sun/directional light)*
 
 Among other miscellaneous tasks necessary for the game to render a frame that you will eventually see, but by this point after the GBuffer drawing we essentially have almost everything we need to start doing actual shading with the game. 
 
@@ -264,9 +264,9 @@ Fast forward just a few small rendering events and we stumble upon our Direction
 
 Going forward we will be using [RenderDoc](https://renderdoc.org/) not only for timings, but [RenderDoc](https://renderdoc.org/) also allows us to modify shaders and be able to replay them in the pipeline to see how they work *(not during runtime though)*
 
-Now just before we get into the implementation of these effects we need to get baseline timings before we start adding things that could slow us down later. These baselines will help keep ourselves in check later so we don't build something too expensive.
+Now just before we get into the implementation of these effects we need to get baseline timings before we start adding things that could slow us down later. These baselines will help keep ourselves in check later so we don't build something that winds up being too expensive.
 
-As mentioned earlier [RenderDoc](https://renderdoc.org/) has a very useful feature where for a given capture, you can actually replay it and get timing values from it to see generally how much time each induvidual draw or operation takes. Granted the timings will not match the original game/application 1:1. You have to run it multiple times to get a good average, and even then it will be off by some factors *(RenderDoc is not a profiler)*, but for the most part it's relatively accurate and will show you if one or more draws are more expensive than the other which is what we want to know!
+As mentioned earlier [RenderDoc](https://renderdoc.org/) has a very useful feature where for a given capture, you can actually replay it and get timing values from it to see generally how much time each induvidual draw or operation takes. Granted the timings will not match the original game/application 1:1. You have to run it multiple times to get a good average, and even then it will be off by some factors *(RenderDoc is not intended to be profiler)*, but for the most part it's relatively accurate and will show you if one or more draws are more expensive than the other which is what we want to know!
 
 It's important do this so we can orient ourselves later to check how expensive things have gotten. To start let's look at the total frame time of the original game capture here. This is on an RTX 3080, at native 3840x2160, and the settings of the game are all maxed out.
 
@@ -291,7 +291,7 @@ General timings for it are roughly ```0.38ms - 0.40ms```, this is an important b
 
 But we have a curveball here... that is a compiled shader. I cannot accurately decompile it into a shader that I can edit and make changes to as I don't have the original source code, so I'll have to reverse engineer the shader. Fortunately Unreal shader source files are accessible for UE4, and I had the assumption that most of the shading code was similar *(Spoiler: I was mostly right)*, so with some trial and error I managed to mostly rebuild the Deferred Directional Pixel Light shader fairly accurately. 
 
-It's not perfect 1:1 match as clearly there were some modifications that have been done for the game. I've done my best to match Rebirth game shading as close as possible, and for the most part it's really close visually minus some specularity differences that I have yet to fully iron out. The timings for the reverse engineered shader are as follows...
+It's not a perfect 1:1 match as clearly there were some modifications that have been done for the game. I've done my best to match Rebirth game shading as close as possible, and for the most part it's really close visually minus some specularity differences that I have yet to fully iron out. The timings for the reverse engineered shader are as follows...
 
 <p float="left">
     <img src="content/timing-base.png" width="100%" />
@@ -303,7 +303,7 @@ The likely reason for this is that I'm probably missing some shading terms that 
 
 Importantly, we have an actual baseline timing now which is ```0.2ms```. When we start adding more and more effects we should see the timing values rise, and we'll know how far off we are from baseline. Ideally for most post effects *(or draw calls)* we want to be as far below 1 milisecond as we can. The smaller the timing value, the better our performance by the end will be. Less is always better!
 
-So... with our baseline of roughly ```0.208ms```, let's get to work!
+So... with our baseline of roughly ```0.2ms```, let's get to work!
 
 ### Micro Shadows
 
@@ -501,7 +501,7 @@ finalColor += specularLight;
 finalColor *= lightAttenuation;
 ```
 
-Ok sweet, it's all setup, now lets check the results!
+Ok sweet it's all setup, now lets check the results...
 
 <p float="left">
     <img src="content/micro-shadows.jpg" width="100%" />
@@ -515,15 +515,7 @@ Ok sweet, it's all setup, now lets check the results!
 
 *Micro Shadows + Contact Shadows*
 
-Wow! What a difference, so much detail in the scene gets revealed. All of the foliage also that was excluded from the shadowmaps now are casting shadows again. Near contact points also the shadows sharpen up and the overall shadow resolution appears much higher!
-
-If we take a closer peek...
-
-<p float="left">
-    <img src="content/closeup1-contact.png" width="100%" />
-</p>
-
-*Micro Shadows + Contact Shadows*
+Wow! What a difference, there so much detail in the scene gets revealed now. All of the foliage also that was excluded from the shadowmaps can now cast shadows again. Looking near geometry contact points also the shadows sharpen up more than before, and the overall shadow resolution looks much higher! Let's take a closer peek...
 
 <p float="left">
     <img src="content/closeup1-og.png" width="100%" />
@@ -531,7 +523,13 @@ If we take a closer peek...
 
 *Micro Shadows Only*
 
-Look at that! Cloud recieves shadows from his hair, that kind of detail would be too small scale to be resolved by the main shadowmaps. The shadow underneath his shoulder-pad also became sharper, and even behind him many foliage details start casting their shadows onto the scene.
+<p float="left">
+    <img src="content/closeup1-contact.png" width="100%" />
+</p>
+
+*Micro Shadows + Contact Shadows*
+
+Nice, look at that! Cloud is reciving self-shadowing from his hair. That kind of detail would be too small to be resolved properly by the main shadowmaps, but the contact shadows is adding back in those details. The shadow underneath his shoulder-pad also became sharper, and behind him many foliage details start casting their shadows onto the scene.
 
 <p float="left">
     <img src="content/contact-shadows-no-random-world-space-naked.jpg" width="100%" />
@@ -545,7 +543,7 @@ Well... I geuss we're done right? What do the timings look like...
     <img src="content/timing-naive-contact-shadows-64-worldspace.png" width="100%" />
 </p>
 
-``3.02ms`` Oh my... that is not good... the shader with the added effect is really slow! *(baseline timings were roughly ```0.2ms - 0.21```)* 
+``3.02ms`` Oh my... that is not good... the shader with the added effect is really slow! *(baseline timings were roughly ```0.2ms - 0.21ms```)* 
 
 Well... time to really dig in and optimize things, atleast now we got it working so lets see what we can do.
 
@@ -579,11 +577,17 @@ What else can we do?
 
 #### Quality Boost: Introduce Noise (Blue Noise)
 
-Fortunately we are in luck, as there is a way that we can mitigate these raymarch stepping artifacts. The solution is noise! *(or jitter, or dithering)*
+Fortunately we are in luck, as there is a way that we can mitigate these raymarch stepping artifacts. The solution is noise! *(or jitter, or dithering)* To explain quickly how this works...
 
-To explain quickly how this works, currently we are stepping uniformly into the depth buffer for every pixel. The uniformity is why we are seeing the stepping. If we introduce randomness into the step, then this will actually allow us to march at different intervals to cover broader areas without increasing sample counts. Seems sound... lets try it!
+<p float="left">
+    <img src="content/raymarch_step_comparison.svg" width="100%" />
+</p>
 
-First let's adjust the function with random in mind...
+Currently we are stepping uniformly into the depth buffer for every pixel. As I mentioned prior with more samples we march with smaller steps which leads to better quality *(but more expensive)*, dropping the samples increases performance but as a consequence the step lengths become larger leading to worse quality. 
+
+The uniformity of the steps is why we are seeing them in the first place. If we introduce randomness into the step, then this will actually allow us to march at different intervals. Letting us cover broader areas without increasing sample counts. 
+
+Seems sound... lets try it! First let's adjust the function with random in mind...
 
 ```HLSL
 float ContactShadowWorldSpace(
@@ -674,9 +678,9 @@ Anyway... how are the timings now, they should be the same right?
     <img src="content/timing-with-blue-noise.png" width="100%" />
 </p>
 
-Roughly ```1.67ms```, huh? 
+```1.67ms```... huh? It's actually more expensive to use noise? 
 
-It's actually more expensive to use noise? Granted it's not by alot *```(~0.04ms)```*, but we are at the same sample count! How is this happening? 
+Granted it's not by alot *```~0.04ms```*, but we are at the same sample count! How is this happening? 
 
 Well the answer comes down to coherence. To keep the explanation as simple as I can, heres the quick context. We are working with shaders here, and shaders run on GPUs. GPUs are essentially big multi-core processors. They are extremely good at processing large groups of pixels that perform similar work. 
 
@@ -686,9 +690,7 @@ However... once we added noise, every pixel now follows a slightly different pat
 
 Fortunately... we're not out of options yet!
 
-For jitter we're currently using [Blue Noise](https://blog.demofox.org/2018/01/30/what-the-heck-is-blue-noise/). Compared to White Noise, [Blue Noise](https://blog.demofox.org/2018/01/30/what-the-heck-is-blue-noise/) produces a more visually pleasing distribution of samples and tends to hide artifacts much better. Now whether it's white or blue noise it doesn't really matter here because both are very random *(white noise more so technically)* and due to that nature that actually is contributing to a loss of coherence. So now we have an interesting question... can we find a 
-
- pattern that sits somewhere between perfectly uniform and completely random?
+For jitter we're currently using [Blue Noise](https://blog.demofox.org/2018/01/30/what-the-heck-is-blue-noise/). Compared to White Noise, [Blue Noise](https://blog.demofox.org/2018/01/30/what-the-heck-is-blue-noise/) produces a more visually pleasing distribution of samples and tends to hide artifacts much better. Now whether it's white or blue noise it doesn't really matter here because both are very random *(white noise more so)* and due to that nature it's is contributing to a loss of coherence. So now we have an interesting question... can we find a jitter pattern that sits somewhere between perfectly uniform and completely random?
 
 #### Optimization: Switching to Interleaved Gradient Noise (IGN)
 
@@ -702,7 +704,7 @@ The goal isn't to be perfectly random, but about providing good sample coverage 
 
 *[Image from Demofox]((https://blog.demofox.org/2022/01/01/interleaved-gradient-noise-a-different-kind-of-low-discrepancy-sequence/))*
 
-Ok, I geuss I'm sold... lets try it out! This one we calculate rather than sample from a texture.
+Ok, seems sound... lets try it out! This one we calculate rather than sample from a texture.
 
 ```HLSL
 float InterleavedGradientNoise(float2 pixCoord, int frameCount)
@@ -722,8 +724,6 @@ Plugging this in place of the Blue Noise that we were using earlier...
 
 *32 Samples with Interleaved Gradient Noise*
 
-Interesting... the noise seems reduced by quite a bit which is great for quality. The stepping artifacts also arent that visible either! 
-
 <p float="left">
     <img src="content/stepping-32-ign.png" width="49%" />
     <img src="content/stepping-32-random-blue.png" width="49%" />
@@ -731,7 +731,7 @@ Interesting... the noise seems reduced by quite a bit which is great for quality
 
 *Left: 32 Samples Interleaved Gradient Noise | Right: 32 Samples Blue Noise*
 
-This is definetly looking better, but the real question is... is the GPU happier with this?
+Interesting... the noise seems reduced by quite a bit which is great for quality. The stepping artifacts also arent that visible either! This is definetly looking better, but the real question is... is the GPU happier with this?
 
 <p float="left">
     <img src="content/timing-with-ign.png" width="100%" />
@@ -750,6 +750,8 @@ Our original function traces contact shadows in world space, which seems fine an
 For each raymarch step we advance a world-space position, project that position into clip/screen space, sample the depth buffer, and then perform our intersection tests. Since these operations occur inside the raymarch loop, their cost quickly adds up especially with the large amount of samples.
 
 ```HLSL
+//inside the loop...
+
 float2 vector_sampleUV = WorldToScreenUV(vector_samplePosition); //<------
 
 //...
@@ -759,9 +761,36 @@ float rayDepth = distance(vector_samplePosition, View_WorldCameraOrigin);
 float sceneDepth = distance(vector_sampleWorldPosition, View_WorldCameraOrigin);
 ```
 
-Recall that Contact Shadows ultimately is just screen-space effect, not world space. The depth buffer already exists in screen space, and every occlusion test eventually happens against that screen-space data. So instead of marching a ray through world space and repeatedly projecting it back to the screen, we can perform the raymarch directly in clip space. This removes much of the per-step transformation work and allows the shader to operate in the same space as the depth buffer it is testing against.
+```HLSL
+float2 WorldToScreenUV(float3 vector_worldPosition)
+{
+    float4 vector_clipPosition = mul(View_WorldToClip, float4(vector_worldPosition, 1.0));
+    vector_clipPosition.xyz /= vector_clipPosition.w;
 
-The end result should be the same shadowing solution, but with significantly less work performed inside the raymarch loop. Awesome, lets try it!
+    float2 vector_uv;
+    vector_uv.x = vector_clipPosition.x * 0.5 + 0.5;
+    vector_uv.y = 1.0 - (vector_clipPosition.y * 0.5 + 0.5); //NOTE: flip because DirectX convention
+
+    return vector_uv;
+}
+
+//"screen uv" to world
+float3 ReconstructWorldPosition(float2 vector_uv, float depth)
+{
+    float4 vector_clipPosition;
+    vector_clipPosition.x = vector_uv.x * 2.0 - 1.0;
+    vector_clipPosition.y = (1.0 - vector_uv.y) * 2.0 - 1.0; //NOTE: flip because DirectX convention
+    vector_clipPosition.z = depth;
+    vector_clipPosition.w = 1.0;
+
+    float4 vector_worldPosition = mul(View_ClipToWorld, vector_clipPosition);
+    return vector_worldPosition.xyz / vector_worldPosition.w;
+}
+```
+
+Recall that Contact Shadows ultimately is just screen-space effect. The depth buffer already exists in screen space, and every occlusion test eventually happens against that screen-space data. So instead of marching a ray through world space and repeatedly projecting it back to the screen, we can perform the raymarch directly in this space *(clip space)*. This removes much of the per-step transformation work and allows the shader to operate in the same space as the depth buffer it is testing against.
+
+The end result should be the same shadowing solution, but with significantly less work performed inside the raymarch loop. That sounds like a plan, lets try it!
 
 ```HLSL
 float ContactShadowClipSpace(
@@ -825,7 +854,7 @@ So! how do our contact shadows look now? If we did everything right it should lo
 
 *Left: World Space Version | Right: Clip Space Version*
 
-Ok good, it does. Thats a good sign, means our math all works as it should... now what about the timings?
+Ok thats a good sign, it means our math all works as it should... now what about the timings?
 
 <p float="left">
     <img src="content/timings-clip-space-32.png" width="100%" />
@@ -839,9 +868,10 @@ One very small and simple thing we can do for optimization, is just before we do
 
 ```HLSL
 //optimization: early out for sky
+//check if our depth values are less than this large distance value...
 if(GBufferData.Depth < 1000000)
 {
-    //do contact shadows
+    //our depth values here are less than that, so do contact shadows!
 }
 ```
 
@@ -853,7 +883,7 @@ Visually there is no difference, but timing wise there is a small bit of improve
 
 Roughly ```0.94ms```, It's really small but every little bit can help. Granted this will vary depending on how much of the screen is the sky vs. ground, in this example quite a large portion of the screen is ground.
 
-So just to simulate that example of where we have a frame with less ground coverage and more sky, I've reduced the depth distance check value from ```1000000``` to ```10000```. Checking the timing values then...
+So just to quickly simulate an example of where we have a frame with less ground coverage and more sky, I've reduced the depth distance check value from ```1000000``` to ```10000```. Checking the timing values then...
 
 <p float="left">
     <img src="content/timing-early-sky-out-aggressive.png" width="100%" />
@@ -929,9 +959,15 @@ Roughly ```0.2ms - 0.21ms```, and now with the optimized contact shadows putting
 
 #### Bonus: Checkerboard Rendering Optimization
 
-One other small optimization idea we can do if we are really trying to squeeze as much as possible out of this, is to do checkerboard rendering. This will definetly drop the quality of the shadows a bit but if we are trying to squeeze every ounce that we possibly can this is something that we can do.
+*Spoiler: Leaving this as a bonus as this unfortunately doesn't help that much, but sharing this anyway.*
+
+One small optimization idea we can do if we are really trying to squeeze as much as possible out of this, is to do checkerboard rendering. This will definetly drop the quality of the shadows a bit but if we are trying to claw back every ounce that we possibly can this is something that we can do.
 
 The idea is simple, we only do contact shadows for every other pixel within a 2x2 grid. For the other pixels within the same grid we skip doing contact shadows. So out of the 2x2 pixel block which has 4 pixels total, only 2 pixels do contact shadows, the other 2 are skipped entirely.
+
+<p float="left">
+    <img src="content/checkerboard_contact_shadows.svg" width="100%" />
+</p>
 
 Now because Rebirth is using TAA later in the pipeline, and we are already relying on it to help cleanup the resolve of our shadows, for the checkerboard pattern it would also be wise to flip the pattern every other frame so we can average results over time within the 2x2 pixel grid.
 
@@ -967,9 +1003,9 @@ Intresting... but now the shadows look half as intense now and there is a bunch 
 
 The answer is yes we can! Using an HLSL built-in function called [QuadReadLaneAt](https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/quadreadlaneat). What is that? Well, time for some quick context...
 
-Modern GPUs execute pixel shaders in small 2×2 pixel groups known as quads. In [Shader Model 6](https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/hlsl-shader-model-6-0-features-for-direct3d-12) we actually get access to this hardware behavior, allowing us to read values from neighboring lanes within the current pixel quad.
+Modern GPUs execute pixel shaders in small 2×2 pixel groups known as quads. In [Shader Model 6](https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/hlsl-shader-model-6-0-features-for-direct3d-12) we actually get access to this hardware behavior, allowing us to read values from neighboring lanes within the current pixel quad. 
 
-Sweet! Let's do it and get the values that are in the other lanes.
+Ok cool, let's do it and get the values that are in the other lanes!
 
 *NOTE: QuadReadLaneAt and it's sibling functions are apart of [Shader Model 6](https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/hlsl-shader-model-6-0-features-for-direct3d-12), which is essentially hardware that supports DX12, and for the most part this game is already on DX12.*
 
@@ -987,13 +1023,11 @@ Each lane contains the value of contactShadow from one of the four pixels in the
 
 Now because all four pixels belong to the same quad, the skipped pixels can read the results from the pixels that performed the raymarch, and we can reconstruct a pretty decent reasonable approximation of the missing shadow information.
 
-That sounds great! Let's try it out!
-
 ```HLSL
 //NOTE: another conditional after the quad reads
 if(!checkerboardTest)
 {
-    //reconstruction style 2:
+    //reconstruction style 1:
     //this is simple, if any of the pixels are 0 (shadow), USE IT!
     contactShadow = min(min(lane0, lane1), min(lane2, lane3));
 
@@ -1019,7 +1053,7 @@ Here are the final timings now...
     <img src="content/timing-checkerboard.png" width="100%" />
 </p>
 
-Roughly ```0.43ms```, not as big as I was expecting. It's definetly a net positive for performance but it's only a small improvement. Like I said earlier if you really want to squeeze every ounce out of this this is something that you can do that doesn't mangle your final effect too bad.
+```0.43ms```, not as big as I was expecting. It's definetly a net positive for performance but only by a small margin. Like I said earlier if you really want to squeeze every ounce out of this this is something that you can do that doesn't mangle your final effect too bad.
 
 #### Bonus: Dual Depth Sampling
 
@@ -1206,7 +1240,7 @@ Roughly ```34.5ms```, effectively 30 FPS. The timings for the original Direction
     <img src="content/timing-final.png" width="100%" />
 </p>
 
-Roughly ```0.44ms```, which is not bad. Quick subtraction math yields that the contact shadows implementation at native 4K on an RTX 3080 costs ```0.23ms```.
+```0.44ms```, which is not bad. Quick subtraction math yields that the contact shadows implementation at native 4K on an RTX 3080 costs ```0.23ms```.
 
 #### 1920 x 1080
 
@@ -1224,19 +1258,19 @@ It's worth pointing out here that because things are much "faster" the milisecon
     <img src="content/timing-original-shader-1080.png" width="100%" />
 </p>
 
-Roughly ```0.081ms```, that's pretty small, which is what you want, now let's plug in the reverse engineered shader with it's main effects *(micro shadows, contact shadows)* disabled...
+```0.081ms```, that's pretty small, which is what you want, now let's plug in the reverse engineered shader with it's main effects *(micro shadows, contact shadows)* disabled...
 
 <p float="left">
     <img src="content/timing-base-1080.png" width="100%" />
 </p>
 
-Roughly ```0.055ms```, just like we saw before the reverse engineered shader is lighter. I take this with a grain of salt as I'm sure there are some shading terms I'm missing, even though visually it looks almost identical. Now let's enable micro-shadows and contact-shadows *(the main effect)* and check the final timings...
+```0.055ms```, just like we saw before the reverse engineered shader is lighter. I take this with a grain of salt as I'm sure there are some shading terms I'm missing, even though visually it looks almost identical. Now let's enable micro-shadows and contact-shadows *(the main effect)* and check the final timings...
 
 <p float="left">
     <img src="content/timing-final-1080.png" width="100%" />
 </p>
 
-Roughly ```0.088ms```, yep it lines up with what we were saw prior. Doing the quick subtraction math yields that at native resolution 1920x1080 on an RTX 3080 in the same game area, contact shadows cost ```0.033ms```, which is not bad at all!
+```0.088ms```, yep it lines up with what we were saw prior. Doing the quick subtraction math yields that at native resolution 1920x1080 on an RTX 3080 in the same game area, contact shadows cost roughly ```0.033ms```, which is not bad at all!
 
 For this frame we are still in excess of ```2.5ms``` before we hit the 60 FPS frame-time ceiling. If one desired that is plenty of room to scale up the effect quality wise to get some more oompf!
 
