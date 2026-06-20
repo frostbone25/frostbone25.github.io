@@ -27,27 +27,28 @@ Sharing my personal notes and experimentation with modding contact shadows into 
 #### Table of Contents
 - [Preface](#preface)
     - [Context](#context)
-    - [Lighting Solutions - Ray Tracing?](#lighting-solutions---ray-tracing)
-    - [Lighting Solutions - Increase Shadow Map Resolution?](#lighting-solutions---increase-shadow-map-resolution)
-    - [Lighting Solutions - Increase Shadow Map Cascades?](#lighting-solutions---increase-shadow-map-cascades)
-    - [Lighting Solutions - Shadow Map Caching?](#lighting-solutions---shadow-map-caching)
-    - [Lighting Solutions - Contact Shadows](#lighting-solutions---contact-shadows)
-- [Brief RenderDoc Breakdown](#brief-renderdoc-breakdown)
+    - [Potential Lighting Solutions: Ray Tracing?](#potential-lighting-solutions-ray-tracing)
+    - [Potential Lighting Solutions:  Increase Shadow Map Resolution?](#potential-lighting-solutions-increase-shadow-map-resolution)
+    - [Potential Lighting Solutions: Increase Shadow Map Cascades?](#potential-lighting-solutions-increase-shadow-map-cascades)
+    - [Potential Lighting Solutions: Shadow Map Caching?](#potential-lighting-solutions-shadow-map-caching)
+    - [Potential Lighting Solutions: Contact Shadows](#potential-lighting-solutions-contact-shadows)
+- [Brief Game Render Breakdown](#brief-game-render-breakdown)
 - [Implementation](#implementation)
-- [Micro Shadows](#micro-shadows)
-- [Contact Shadows](#contact-shadows)
-    - [Limitations](#limitations)
-    - [Getting Good Results](#getting-good-results)
-    - [Naive Contact Shadows (World Space)](#naive-contact-shadows-world-space)
-    - [Optimization: Reduce Sample Counts](#optimization-reduce-sample-counts)
-    - [Quality Boost: Introduce Noise (Blue Noise)](#quality-boost-introduce-noise-blue-noise)
-    - [Optimization: Switching to Interleaved Gradient Noise (IGN)](#optimization-switching-to-interleaved-gradient-noise-ign)
-    - [Optimization: Clip Space](#optimization-clip-space)
-    - [Optimization: Early Sky Out](#optimization-early-sky-out)
-    - [Optimization: Further Sample Reduction](#optimization-further-sample-reduction)
-    - [Bonus: Checkerboard Rendering Optimization](#bonus-checkerboard-rendering-optimization)
-    - [Bonus: Dual Depth Sampling](#bonus-dual-depth-sampling)
-    - [Bonus: Depth Point Sampling](#bonus-depth-point-sampling)
+    - [Getting Baseline Timings](#getting-baseline-timings)
+    - [Micro Shadows](#micro-shadows)
+    - [Contact Shadows](#contact-shadows)
+        - [Limitations](#limitations)
+        - [Getting Good Results](#getting-good-results)
+        - [Naive Contact Shadows (World Space)](#naive-contact-shadows-world-space)
+        - [Optimization: Reduce Sample Counts](#optimization-reduce-sample-counts)
+        - [Quality Boost: Introduce Noise (Blue Noise)](#quality-boost-introduce-noise-blue-noise)
+        - [Optimization: Switching to Interleaved Gradient Noise (IGN)](#optimization-switching-to-interleaved-gradient-noise-ign)
+        - [Optimization: Clip Space](#optimization-clip-space)
+        - [Optimization: Early Sky Out](#optimization-early-sky-out)
+        - [Optimization: Further Sample Reduction](#optimization-further-sample-reduction)
+        - [Bonus: Checkerboard Rendering Optimization](#bonus-checkerboard-rendering-optimization)
+        - [Bonus: Dual Depth Sampling](#bonus-dual-depth-sampling)
+        - [Bonus: Depth Point Sampling](#bonus-depth-point-sampling)
 - [Final Results](#final-results)
 - [Video Preview](#video-preview)
 - [Timings on 1920x1080 and 3840x2160](#timings-on-1920x1080-and-3840x2160)
@@ -94,7 +95,7 @@ Now given the constraints, you really can't do a whole lot without resorting to 
 
 Let's be reasonable here... let's assume that we are under very tight constraints that were imposed on the FF7R team *(prioritizing high framerate and fast action with good clarity)*... so within these constraints, what can we do to improve the quality of our game lighting? *(the direct lighting, not global illumination)*
 
-#### Lighting Solutions - Ray Tracing?
+#### Potential Lighting Solutions: Ray Tracing?
 
 I want to knock this one off first because it's usually the one that is on everyones minds... generally Ray-Tracing is amazing and when done well can solve so many lighting and production problems in one go, but even with today's hardware it is still incredibly expensive and has it's own set of problems that need solving before you get something usable.
 
@@ -104,7 +105,7 @@ Ontop of that, once you have the acceleration structure you still have the issue
 
 There are different techniques for shading with Ray-Tracing, and I could go on... but I think you get the picture. That isn't to say I'm not a fan of Ray-Tracing, I am but we need to be realistic and reasonable here given the constraints, and unfortunately Ray-Tracing is a no go because there are just too many problems to solve with it... So what else can we do?
 
-#### Lighting Solutions - Increase Shadow Map Resolution?
+#### Potential Lighting Solutions: Increase Shadow Map Resolution?
 
 The first and obvious thing would be to bump the resolution of the Directional Light Shadowmap. In the case of FF7 Rebirth, using something like [FFVIIHook](https://www.nexusmods.com/finalfantasy7rebirth/mods/4?tab=description) can let you do this even at runtime. Most other UE-based games are similar to a degree either with a console or .ini tweaks.
 
@@ -123,7 +124,7 @@ Rebirth is an open world... so we need to be able to see shadows really far away
 
 Well that sucks... what else can we do?
 
-#### Lighting Solutions - Increase Shadow Map Cascades?
+#### Potential Lighting Solutions: Increase Shadow Map Cascades?
 
 If we can't cover the entire world with one large single shadow map texture... why not cover it with multiple shadow maps textures instead?
 
@@ -155,7 +156,7 @@ Because of this, Rebirth sticks to 2 just shadow cascades. 1 cascade fairly clos
 
 *FF7 Rebirth's two cascaded directional light shadowmap.*
 
-#### Lighting Solutions - Shadow Map Caching?
+#### Potential Lighting Solutions: Shadow Map Caching?
 
 *(NOTE: I believe the game is already using this, though I haven't been able to verify just yet at the moment)*
 
@@ -169,7 +170,7 @@ In addition, rendering shadows at slower rates can introduce new problems. Movin
 
 Well darn... things are looking grim... is there anything else we can do?
 
-#### Lighting Solutions - Contact Shadows
+#### Potential Lighting Solutions: Contact Shadows
 
 Instead of utilizing shadow maps, we can calculate shadows somewhat accurately just by using the camera depth buffer and a given light direction. If games can calculate screen-space ambient occlusion with half decent results along with other similar techniques, then we should be able to calculate shadows with screen-space information as well!
 
@@ -190,7 +191,7 @@ But heres the real head-scratcher... Rebirth does not use them at all? Unfortuna
 
 This single problem has led me down a spiral *(hence this mod and article :D)* and on a journey to be able to see and play the game with this effect integrated. So... let's get into it!
 
-## Brief RenderDoc Breakdown
+## Brief Game Render Breakdown
 
 Here is a breakdown of how a frame is rendered in Rebirth using [RenderDoc](https://renderdoc.org/) for this whole process. Unfortunately I am not [Muhammad](https://mamoniem.com/author/muhammad/) or [Adrian Courreges](https://www.adriancourreges.com/blog/2020/12/29/graphics-studies-compilation/) so this will be a very brief breakdown of Rebirth's rendering. *(And that would veer the focus of this article off too far)*. This should be just enough to give you some idea of what's going on under the hood.
 
@@ -261,6 +262,8 @@ Fast forward just a few small rendering events and we stumble upon our Direction
 </p>
 
 ## Implementation
+
+### Getting Baseline Timings
 
 Going forward we will be using [RenderDoc](https://renderdoc.org/) not only for timings, but [RenderDoc](https://renderdoc.org/) also allows us to modify shaders and be able to replay them in the pipeline to see how they work *(not during runtime though)*
 
