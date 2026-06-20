@@ -96,11 +96,11 @@ So let's be reasonable here... let's assume that we are under very tight constra
 
 #### Lighting Solutions - Ray Tracing?
 
-I want to knock this one off first because it's usually the one that is on everyones minds... generally Ray-Tracing is amazing and when done well can solve so many lighting problems in one go, but even with today's hardware it is still incredibly expensive and creates it's own large set of problems that need solving before you get something usable.
+I want to knock this one off first because it's usually the one that is on everyones minds... generally Ray-Tracing is amazing and when done well can solve so many lighting and production problems in one go, but even with today's hardware it is still incredibly expensive and has it's own set of problems that need solving before you get something usable.
 
-First off you'd need to have an acceleration structure that essentially stores all of the triangles within your scene, but Rebirth is a huge open world so that means billions of triangles that need to be stored and held in memory. Rebuilding that every frame is out of the queston unless you have some crazy cascade like scheme. Precomputation would be a valid option but then you'd have to hold all of that data in memory, so you'd have deal with it in smaller chunks. All of that even with precomputation would most certainly introduce a lot of overhead to just managing all of that data, and also dealing with dynamic meshes into the mix.
+First off you'd need to have an acceleration structure that essentially stores all of the triangles within your scene, but Rebirth is a huge open world so that means billions of triangles that need to be stored and held in memory. Rebuilding that every frame is out of the question unless you have some crazy cascade like scheme. Precomputation would be a valid option but then you'd have to hold all of that data in memory, so you'd have deal with it in smaller chunks. All of that even with precomputation would most certainly introduce a lot of overhead to just managing all of that data, and also dealing with dynamic meshes into the mix which is another problem.
 
-Ontop of that, once you have the acceleration structure you still have the issue of needing to calculate your lighting. For most path-traced games *(Cyberpunk and RE9 come to mind)* you can only manage a small amount of rays for every pixel for a decent playable frame rate, sometimes maybe even a ray for every 1/2th pixel or even 1/4th! With a small amount of rays for every pixel that also means lots of noise! That noise needs to be piped through many layers of filtering *(Temporal Filtering, ReSTIR, ATrous Wavelet, etc.)* just to get something half decent at the end that often is not sharp enough to resolve good detail in motion. To add insult to injury that is usually just for diffuse shading, for specular shading it needs it's own pipeline and set of filters/solutions which just piles on more costs and problems.
+Ontop of that, once you have the acceleration structure you still have the issue of needing to calculate your lighting. For most path-traced games *(Cyberpunk and RE9 come to mind)* you can only manage a small amount of rays for every pixel for a decent playable frame rate, sometimes maybe even a ray for every 1/2th a pixel or 1/4th! With a small amount of rays for every pixel that also means lots of noise! That noise needs to be piped through many layers of filtering *(Temporal Filtering, ReSTIR, ATrous Wavelet, etc.)* just to get something half decent at the end that often is not sharp enough to resolve good detail in motion. To add insult to injury that is usually just for diffuse shading, for specular shading it needs it's own pipeline and set of filters/solutions which just piles on more costs and problems.
 
 There are different techniques for shading with Ray-Tracing, and I could go on... but I think you get the picture. That isn't to say I'm not a fan of Ray-Tracing, I am but we need to be realistic and reasonable here given the constraints, and unfortunately Ray-Tracing is a no go because there are just too many problems to solve with it... So what else can we do?
 
@@ -119,13 +119,13 @@ It's simple, effective... but costly! There are actually multiple caveat's with 
 - Increasing the resolution means more memory for the shadowmap, and more pixel invocations...  
 - Shadowmaps can only resolve so much detail across an area, and this scales with distance. 
 
-Rebirth is an open world... so we need to be able to see shadows really far away, so shadow distances need to be high, but that means less resolution with more distance! Again we could try bumping the resolution to compensate but we can hit VRAM/Memory problems as we can only hold so much data. This only works up to a certain point but due to the scale of the world this is just not enough.
+Rebirth is an open world... so we need to be able to see shadows really far away, that means shadow distances need to be high, but that also means less resolution with more distance! Again we could try bumping the resolution to compensate but we can hit VRAM/Memory problems as we can only hold so much data. This only works up to a certain point but due to the scale of the world this is usually not enough.
 
 Well that sucks... what else can we do?
 
 #### Lighting Solutions - Increase Shadow Map Cascades?
 
-Building on the increased shadow map resolution idea, if we can't cover the entire world with one large single shadow map texture... why not cover it with multiple shadow maps instead?
+If we can't cover the entire world with one large single shadow map texture... why not cover it with multiple shadow maps textures instead?
 
 This is effectively what [Cascaded Shadow Maps (CSM)](https://dev.epicgames.com/documentation/unreal-engine/use-cascaded-shadows?application_version=4.27) are, and fortunately Rebirth is already using this *(along with most of the industry, it's very common)*. It works like this...
 
@@ -139,15 +139,15 @@ This is effectively what [Cascaded Shadow Maps (CSM)](https://dev.epicgames.com/
     <img src="content/unity-shadow-csm-visual.png" width="49%" />
 </p>
 
-*Unity Example: Left side is 4 cascade shadowmaps, same resolution as before but note how much better looking shadows close to the camera are. The Right visualizes the 4 cascades with colors.*
+*Unity Example: Left side is 4 shadowmap cascades, same resolution as before but note how much better looking shadows close to the camera are. The Right visualizes the 4 cascades with colors.*
 
-The more cascades we do, the better coverage we get of our scene, and because each cascade is at a different scale we can allocate far more pixels for certain areas closer to the player camera. With some manual fine tuning of the distances for each cascade we can get some exceptionally good looking results with this. Awesome!
+The more cascades we do, the better coverage we get of our scene, and because each cascade is at a different scale we can allocate more shadowmap pixels for certain areas closer to the player camera. With some manual fine tuning of the distances for each cascade we can get some exceptionally good looking results with this. Awesome!
 
 Except... there are problems with this technique as well.
 
-For each Shadowmap Cascade, you need to re-render the scene *(because it's just another shadowmap)*. That means for shadow 4 cascades *(which is usually the standard at most)* you need to re-render the scene 4 different times again! That is alot of draw calls that will eventually tank your performance. Even worse, the greater the scene complexity gets *(i.e. the bigger the world / more objects on screen to draw)* the heavier this gets!
+For each shadowmap cascade, you need to re-render the scene again *(because it's just another shadowmap)*. That means for 4 shadow cascades *(which is usually the standard at most)* you need to re-render the scene 4 different times again! That is alot of draw calls that will eventually tank your performance. Even worse, the greater the scene complexity gets *(i.e. the bigger the world / more objects on screen to draw)* the heavier this gets!
 
-Because of this, Rebirth sticks to 2 Shadow cascades. 1 Shadow cascade fairly close to the camera, and the other a reasonable distance away. The rest just remains unshadowed.
+Because of this, Rebirth sticks to 2 just shadow cascades. 1 cascade fairly close to the camera, and the other a reasonable distance away. The rest just remains unshadowed *(Spoiler, handled with static shadowmaps, which I will get into now...)*
 
 <p float="left">
     <img src="content/directionalshadowmap.jpg" width="100%" />
@@ -159,13 +159,13 @@ Because of this, Rebirth sticks to 2 Shadow cascades. 1 Shadow cascade fairly cl
 
 *(NOTE: I believe the game is already using this, though I haven't been able to verify just yet at the moment)*
 
-Shadowmap Caching? Usually Shadowmaps are rendered every frame, but turns out we actually don't have to do that!
+Shadowmap Caching? Usually shadowmaps are rendered every frame, but turns out we actually don't have to do that!
 
-Shadowmap Caching is simple, for certain lights or maybe even cascades we can actually update them at a slower rate. This gives us performance gains as we don't have to re-render them every frame, great! We can even take this idea further and "pre-compute" a shadowmap that we can just simply pull whenever we want and not have to redraw the scene at all, even better!
+Again the idea is simple, for certain lights or maybe even cascades we can actually update them at a slower rate. This gives us performance gains as we don't have to re-render them every frame, great! We can even take this idea further and "pre-compute" a shadowmap that we can just simply pull whenever we want, and not have to redraw the scene at all. That sounds good!
 
-Except... just like shadowmaps you still have to deal with the problem of memory. Holding too many shadowmap textures in VRAM/memory can lead to problems, and again with the scale of Rebirth's world there wouldn't be enough to reasonably hold all of the needed data for the quality level we'd want to hit.
+Except... just like shadowmaps you still have to deal with the problem of memory. Holding too many shadowmap textures in VRAM/memory can lead to problems, and again with the scale of Rebirth's world there wouldn't be enough to reasonably hold all of the needed data for the quality level we'd want to hit. Don't forget also at the end of the day they are still shadowmaps, so you have to deal with the fact that you can only resolve so much detail over distance depending on the resolution they are set at.
 
-In addition also rendering shadows at slower rates can introduce new problems. Moving objects rendered in a delayed shadowmap can create "false" occlusion issues, and visual problems where shadows will appear to "stutter" with sparse updates update.
+In addition, rendering shadows at slower rates can introduce new problems. Moving objects rendered in a delayed shadowmap can create "false" occlusion issues, and visual problems where shadows will appear to "stutter" with sparse updates update.
 
 Well darn... things are looking grim... is there anything else we can do?
 
@@ -186,7 +186,7 @@ The biggest win of this technique is that there is no need for re-drawing the sc
 
 Now, just like the lighting solutions before, there are issues with this technique as well, but considering the context that we are in this effect is actually perfectly suited for this kind of situation! Rebirth is built on UE4, and it already has quite the feature set when it comes to graphical effects. Among them are [contact shadows that are already built-in to the engine by default!](https://dev.epicgames.com/documentation/unreal-engine/contact-shadows-in-unreal-engine?lang=en-US) 
 
-But heres the real head-scratcher... Rebirth does not use them at all? Unfortunately with modding using FFVII Hook and many commands it appears that many of those graphical features including contact shadows have been stripped out. Why?
+But heres the real head-scratcher... Rebirth does not use them at all? Unfortunately with modding using [FFVIIHook](https://www.nexusmods.com/finalfantasy7rebirth/mods/4?tab=description) and many commands it appears that many of those graphical features including contact shadows have been stripped out. Why?
 
 This single problem has led me down a spiral *(hence this mod and article :D)* and on a journey to be able to see and play the game with this effect integrated. So... let's get into it!
 
@@ -194,7 +194,7 @@ This single problem has led me down a spiral *(hence this mod and article :D)* a
 
 Here is a breakdown of how a frame is rendered in Rebirth using [RenderDoc](https://renderdoc.org/) for this whole process. Unfortunately I am not [Muhammad](https://mamoniem.com/author/muhammad/) or [Adrian Courreges](https://www.adriancourreges.com/blog/2020/12/29/graphics-studies-compilation/) so this will be a very brief breakdown of Rebirth's rendering. *(And that would veer the focus of this article off too far)*. This should be just enough to give you some idea of what's going on under the hood.
 
-Both FF7 Remake and FF7 Rebirth are both built on a modified UE4 technology base. UE4 uses a [Deferred Renderer Pipeline](https://en.wikipedia.org/wiki/Deferred_shading), in english this means that any shading is done later in rendering process. Before shading we draw the scene multiple times into multiple different graphics buffers *(GBuffers)* that can then be used later to do our actual shading. *Hence the name deferred, the shading is deferred to a later point in time.*
+Both FF7 Remake and FF7 Rebirth are both built on UE4 *(a modified variant of the engine)* which uses a [Deferred Renderer Pipeline](https://en.wikipedia.org/wiki/Deferred_shading). In english this means that general shading is done later in rendering process near the end. Before shading we draw the scene multiple times into multiple different graphics buffers *(GBuffers)* that will hold various kinds of data that can then be used later to do our actual shading. *Hence the name deferred, the shading is deferred to a later point in time.*
 
 In the case of rebirth, the renderer draws to **7 different GBuffers + Depth**...
 
@@ -203,32 +203,32 @@ In the case of rebirth, the renderer draws to **7 different GBuffers + Depth**..
     <img src="content/gbuffer-rt1.jpg" width="49%" />
 </p>
 
-*Left Side: RT0 | R16G16B16A16_FLOAT | Full black except for alpha channel, I'm not sure what this is used for yet...*
-*Right Side: RT1 | R10G10B10A2_UNORM | WorldNormal (RGB), SelectiveOutputMask (A)*
+***Left Side:*** *RT0 | R16G16B16A16_FLOAT | Full black except for alpha channel, I'm not sure what this is used for yet...*
+***Right Side:*** *RT1 | R10G10B10A2_UNORM | WorldNormal (RGB), SelectiveOutputMask (A)*
 
 <p float="left">
     <img src="content/gbuffer-rt2.jpg" width="49%" />
     <img src="content/gbuffer-rt3.jpg" width="49%" />
 </p>
 
-*Left Side: RT2 | B8G8R8A8_TYPELESS | Metallic (R) Specular (G) Roughness (B) ShadingModelID (A)*
-*Right Side: RT3 | B8G8R8A8_TYPELESS | BaseColor (RGB) GBufferAO (A)*
+***Left Side:*** *RT2 | B8G8R8A8_TYPELESS | Metallic (R) Specular (G) Roughness (B) ShadingModelID (A)*
+***Right Side:*** *RT3 | B8G8R8A8_TYPELESS | BaseColor (RGB) GBufferAO (A)*
 
 <p float="left">
     <img src="content/gbuffer-rt4.jpg" width="49%" />
     <img src="content/gbuffer-rt5.jpg" width="49%" />
 </p>
 
-*Left Side: RT4 | B8G8R8A8_TYPELESS | Custom Data, This is quite multi-purpose for different parts of the image depending on the ShadingModelID.*
-*Right Side: RT5 | B8G8R8A8_TYPELESS | WorldNormals repeated again, not sure what the purpose of this is.*
+***Left Side:*** *RT4 | B8G8R8A8_TYPELESS | Custom Data, This is quite multi-purpose for different parts of the image depending on the ShadingModelID.*
+***Right Side:*** *RT5 | B8G8R8A8_TYPELESS | WorldNormals repeated again, not sure what the purpose of this is.*
 
 <p float="left">
     <img src="content/gbuffer-rt6.jpg" width="49%" />
     <img src="content/gbuffer-depth.jpg" width="49%" />
 </p>
 
-*Left Side: RT6 | R16G16_UNorm | Velocity Buffer*
-*Right Side: Depth | D32S8_TYPELESS | Scene Depth*
+***Left Side:*** *RT6 | R16G16_UNorm | Velocity Buffer*
+***Right Side:*** *Depth | D32S8_TYPELESS | Scene Depth*
 
 Just to also show you the rendering timeline...
 
@@ -238,7 +238,7 @@ Just to also show you the rendering timeline...
 
 *[RenderDoc](https://renderdoc.org/) Timeline*
 
-This occurs almost near the end of the pipeline *(the flag on the timeline is where the Deferred GBuffer finishes drawing)*, it looks like Rebirth has a vast amount of events up before the actual GBuffer drawing which I won't go into, but most of them boil down to just...
+This occurs almost near the end of the pipeline *(the flag on the timeline is where the Deferred GBuffer finishes drawing)*. Rebirth has a vast amount of events up before the actual GBuffer drawing which I won't go into, but the notable ones are...
 
 <p float="left">
     <img src="content/hzb-mip0.jpg" width="100%" />
@@ -252,7 +252,9 @@ This occurs almost near the end of the pipeline *(the flag on the timeline is wh
 
 *Shadow Map Draws: Rendering of the world through the perspective of some lights for shadowmaps. In this case the sun/directional light*
 
-Among other miscellaneous tasks necessary for the game to render a frame that you will eventually see, but by this point after the GBuffer drawing we essentially have almost everything we need to start doing actual shading with the game. Fast forwarding just a few small rendering events and we stumble upon our Directional Light *(sunlight)* draw pass which will shade the scene with the sunlight! This is what we will modify...
+Among other miscellaneous tasks necessary for the game to render a frame that you will eventually see, but by this point after the GBuffer drawing we essentially have almost everything we need to start doing actual shading with the game. 
+
+Fast forward just a few small rendering events and we stumble upon our Directional Light *(sunlight)* draw pass, which will shade the scene with the sunlight! This is what we will be modifying...
 
 <p float="left">
     <img src="content/base-naked.jpg" width="100%" />
@@ -264,46 +266,50 @@ Going forward we will be using [RenderDoc](https://renderdoc.org/) not only for 
 
 Now just before we get into the implementation of these effects we need to get baseline timings before we start adding things that could slow us down later. These baselines will help keep ourselves in check later so we don't build something too expensive.
 
-[RenderDoc](https://renderdoc.org/) has a very useful feature where for a given capture, you can actually replay it and get timing values from it to see generally how much time each induvidual draw or operation takes. Granted the timings will not match the original game/application 1:1. You have to run it multiple times to get a good average, and even then it will be off by some factors, but for the most part it's relatively accurate and will show you if one or more draws are more expensive than the other.
+As mentioned earlier [RenderDoc](https://renderdoc.org/) has a very useful feature where for a given capture, you can actually replay it and get timing values from it to see generally how much time each induvidual draw or operation takes. Granted the timings will not match the original game/application 1:1. You have to run it multiple times to get a good average, and even then it will be off by some factors *(RenderDoc is not a profiler)*, but for the most part it's relatively accurate and will show you if one or more draws are more expensive than the other which is what we want to know!
 
-It's important do this so we can orient ourselves later to check how expensive things have gotten. To start let's look at the total frame time of the original game capture here. This is on an RTX 3080, at 3840x2160, and the settings of the game are all maxed out.
+It's important do this so we can orient ourselves later to check how expensive things have gotten. To start let's look at the total frame time of the original game capture here. This is on an RTX 3080, at native 3840x2160, and the settings of the game are all maxed out.
 
 <p float="left">
     <img src="content/timing-entire-frame.png" width="100%" />
 </p>
 
 Roughly ```34.5ms```. To help orient ourselves with the timing values, heres a quick reference...
-- 30 FPS Frame-Time Budget: 33.33ms
-- 60 FPS Frame-Time Budget: 16.67ms
-- 120 FPS Frame-Time Budget: 8.33ms
+- **30 FPS** Frame-Time Budget: 33.33ms
+- **60 FPS** Frame-Time Budget: 16.67ms
+- **120 FPS** Frame-Time Budget: 8.33ms
 
-For the timing value that we have, it's effectively 30 FPS, which is actually accurate given that I played the game at **native 4K** *(No DLSS, upscaling, or dynamic resolution)* and maxed out the visual settings. Sometimes during certain areas it increases or decreases depending on the complexity of the scene.
+For the timing value that we have, it's effectively 30 FPS, which is fairly accurate given that I played the game at **native 4K** *(No DLSS, upscaling, or dynamic resolution)* and maxed out the visual settings. Sometimes during certain areas the frame timings will increase or decrease depending on the complexity of the scene. Now lets check the draw call that is responsible for shading the scene with sunlight. 
 
-Now lets go to the draw call that is responsible for shading the scene with sunlight, and here is the original timings for the Directional Pixel Light Shader that the game is using within [RenderDoc](https://renderdoc.org/)...
+Here is the original timings for the Directional Pixel Light Shader that the game is using within [RenderDoc](https://renderdoc.org/)...
 
 <p float="left">
     <img src="content/timing-original-shader.png" width="100%" />
 </p>
 
-General timings for it are ```0.38ms - 0.40ms```, this is an important baseline to keep in mind so we can check if we are slower, or faster before we move forward. Now heres the thing... that is a compiled shader, I cannot accurately decompile it into a shader that I can edit and make changes to. I don't have the original source code, so I'll have to reverse engineer the shader.
+General timings for it are roughly ```0.38ms - 0.40ms```, this is an important baseline to keep in mind so we can check if we are slower, or faster than the original shader before we move forward. 
 
-Fortunately Unreal shader source files are public for UE4, and with some searching plus trial and error I managed to mostly rebuild Unreal's Deferred Directional Pixel Light shader. It's not match as there are some modifications that have been done for the game. I've done my best to match the original game shading as close as possible. For the most part it's almost indiscernable visually minus some specualrity differences that I have yet to fully iron out.
+But we have a curveball here... that is a compiled shader. I cannot accurately decompile it into a shader that I can edit and make changes to as I don't have the original source code, so I'll have to reverse engineer the shader. Fortunately Unreal shader source files are accessible for UE4, and I had the assumption that most of the shading code was similar *(Spoiler: I was mostly right)*, so with some trial and error I managed to mostly rebuild the Deferred Directional Pixel Light shader fairly accurately. 
 
-The timings for the reverse engineered shader are as follows...
+It's not perfect 1:1 match as clearly there were some modifications that have been done for the game. I've done my best to match Rebirth game shading as close as possible, and for the most part it's really close visually minus some specularity differences that I have yet to fully iron out. The timings for the reverse engineered shader are as follows...
 
 <p float="left">
     <img src="content/timing-base.png" width="100%" />
 </p>
 
-General timings are roughly ```0.2ms - 0.21ms```, that's definetly quite a bit faster than the original but I'm sure I'm probably missing some terms here and there that the original shader is doing. Again the shader is almost identical to the in-game one visually but for sanity and simplicity sake let's just say that we are working with the original shader here. Importantly, we have an actual baseline timing now which is ```0.2ms```. When we start adding more and more effects we should see the timing values rise, and we'll know how far off we are from baseline. Now ideally for most post effects we want to be as far below 1 milisecond as we can, the smaller the timing the better our performance by the end will be. Less is always better!
+Roughly ```0.208ms - 0.21ms```, that's definetly quite a bit faster than the original.
 
-So... with our baseline set now at roughly ```0.209ms```, let's get to work!
+The likely reason for this is that I'm probably missing some shading terms that the original shader is doing that I haven't run into yet. Despite that though the shader is almost identical to the in-game one visually but for sanity and simplicity sake let's not dwell too hard on this.
+
+Importantly, we have an actual baseline timing now which is ```0.2ms```. When we start adding more and more effects we should see the timing values rise, and we'll know how far off we are from baseline. Ideally for most post effects *(or draw calls)* we want to be as far below 1 milisecond as we can. The smaller the timing value, the better our performance by the end will be. Less is always better!
+
+So... with our baseline of roughly ```0.208ms```, let's get to work!
 
 ### Micro Shadows
 
 This was the first thing that I wanted to try, as it's a very simple and cheap *(but very effective)* technique that was introduced in [Uncharted 4](https://advances.realtimerendering.com/other/2016/naughty_dog/). 
 
-[Micro Shadows](https://advances.realtimerendering.com/other/2016/naughty_dog/) are a very low cost way of adding detail to a surface or object in direct light by simulating micro shadows using the material ambient occlusion.
+[Micro Shadows](https://advances.realtimerendering.com/other/2016/naughty_dog/) are a very low cost way of adding detail to a surface or object in direct light by simulating micro shadows using occlusion maps already authored for assets/materials.
 
 ```HLSL
 float ComputeMicroShadowing(float AO, float NdotL, float opacity)
@@ -314,7 +320,7 @@ float ComputeMicroShadowing(float AO, float NdotL, float opacity)
 }
 ```
 
-To apply it to our shading all we need to do is just call the function, pass in the necessary terms and multiply it against our final light.
+To apply it to our shading all we need to do is just call the function, pass in the necessary terms and multiply it against our final light. Thanks to the GBuffers we get easy access to these occlusion maps already so we just simply plug it in to the function along with main light dot product for shading to modulate it.
 
 ```HLSL
 //pseudo code!
@@ -336,24 +342,19 @@ finalColor *= lightAttenuation;
 Now let's see how it looks in the game, looking at the original first then with microshadows...
 
 <p float="left">
-    <img src="content/base.jpg" width="100%" />
+    <img src="content/base.jpg" width="49%" />
+    <img src="content/micro-shadows.jpg" width="49%" />
 </p>
 
-*No Micro Shadows*
+*Left: No Micro Shadows | Right: With Micro Shadows*
 
-<p float="left">
-    <img src="content/micro-shadows.jpg" width="100%" />
-</p>
-
-*With Micro Shadows*
-
-You will need to compare both images side by side and flip between them to see the full effect on the final rendered image, but to help with that I will show the micro-shadow effect in pure isolation.
+You will definetly will need to flip between them quickly to see it's effects on the final rendered image, but to help with that I will show the micro-shadow effect in pure isolation.
 
 <p float="left">
     <img src="content/micro-shadows-only.jpg" width="100%" />
 </p>
 
-The beauty of the technique is in it's simplicity. It is a bit of a hack, but it's physically plausible and the result's are quite effective at adding detail just by leveraging the authored material ambient occlusion maps. Holes, crevices, and other details that are in the occlusion map are amplified.
+This is what Micro Shadows is adding. The beauty of the technique is in it's simplicity. It is a bit of a hack, but it's physically plausible and the result's are quite effective at adding tons detail just by leveraging the authored material ambient occlusion maps. Holes, crevices, and other surface/object features that are in the occlusion map come out more.
 
 Checking our timings...
 
@@ -361,7 +362,9 @@ Checking our timings...
     <img src="content/timing-micro-shadow.png" width="100%" />
 </p>
 
-It's difficult to pinpoint the exact values due to some noise, but generally they fall in the same exact ```0.2ms - 0.21ms``` range just like before. Like I said, super cheap! That certainly helped a bit... but I'm not fully satisfied yet! I want to go even further and beyond!
+Can't pinpoint the exact values due to some noise with RenderDoc replay timings, but generally it's the exact same ```0.208ms - 0.21ms``` range just like before. Like I said, super cheap, and it certainly helped a bit... but I'm not fully satisfied yet! 
+
+I want to go even further and beyond!
 
 ### Contact Shadows
 
@@ -668,7 +671,7 @@ Ok that actually looks pretty good! I'm actually seeing some areas that before w
 Anyway... how are the timings now, they should be the same right?
 
 <p float="left">
-    <img src="content/timing-with-blue-noise.png" width="49%" />
+    <img src="content/timing-with-blue-noise.png" width="100%" />
 </p>
 
 Roughly ```1.67ms```, huh? 
@@ -906,8 +909,7 @@ Now... we dropped both the sample count and ray length quite a bit, so... what a
     <img src="content/timing-final.png" width="100%" />
 </p>
 
-Roughly ```0.44ms```, that's wweet! Our contact shadows now is way more optimized than where it started out, and still can pack quite a punch to the final image all for a reasonable cost! 
-
+Roughly ```0.44ms```, that's sweet! Our contact shadows now is way more optimized than where it started out, and still can pack quite a punch to the final image all for a reasonable cost! 
 
 Now as a refresher let's do some timing comparisons, remember that the original game shader in it's entirety was the following...
 
@@ -915,116 +917,15 @@ Now as a refresher let's do some timing comparisons, remember that the original 
     <img src="content/timing-original-shader.png" width="100%" />
 </p>
 
-Roughly ```0.40ms```, so actually funny enough our reverse engineered shader + the contact shadows are almost at the same timing value now ```+ 0.04ms - 0.05ms``` but let's not get ahead of ourselves. The reverse engineered shader timings without contact shadows was the following...
+Roughly ```0.40ms```, so actually funny enough our reverse engineered shader + the contact shadows are almost at the same timing value now + ```0.04ms - 0.05ms``` but let's not get ahead of ourselves. The reverse engineered shader timings without contact shadows was the following...
 
 <p float="left">
     <img src="content/timing-base.png" width="100%" />
 </p>
 
-Roughly ```0.2ms - 0.21ms```, and now with the optimized contact shadows putting us at ```0.44ms``` this means that the contact shadows we added is roughly ```0.23ms`` which is actually not too bad considering we are running at 4k (3840x2160). That's good, and now we have something that radically transforms the look of the game specially in these areas that adds a large amount of detail for a relatively small cost!
+Roughly ```0.2ms - 0.21ms```, and now with the optimized contact shadows putting us at ```0.44ms``` this means that the contact shadows we added is roughly ```0.23ms``` which is actually not too bad considering we are running at 4k (3840x2160). That's good, and now we have something that radically transforms the look of the game specially in these areas that adds a large amount of detail for a relatively small cost!
 
-[*NOTE: Click here if you want to see 1080p timings.*](#timings-on-1920x1080-and-3840x2160)
-
-#### Bonus: Dual Depth Sampling
-
-I left this for last as a bonus, but also in "[Rendering Tiny Glades With Entirely Too Much Ray Marching](https://www.youtube.com/watch?v=jusWW2pPnA0)" the main plus they did for improving the results of their contact shadows was actually sampling the depth textures twice. One with point sampling, the other with bilinear filtering.
-
-The result was a significant reduction in contact shadow self-occlusion issues, the only reason I'm leaving this for last is while this does improve the quality, it means 2 depth texture samples now in the loop which makes it quite a bit more expensive.
-
-```HLSL
-float ContactShadowClipSpaceDualDepth(
-    float3 vector_worldPosition,
-    float3 vector_worldNormal,
-    float3 vector_worldLightDirection,
-    float random)
-{
-    float invSamples = rcp(CONTACT_SHADOWS_SAMPLES);
-
-    float3 rayOrigin = vector_worldPosition;
-    float4 clipStart = mul(View_WorldToClip, float4(rayOrigin, 1));
-    float4 clipEnd = mul(View_WorldToClip, float4(rayOrigin + vector_worldLightDirection * CONTACT_SHADOWS_RAY_LENGTH, 1));
-
-    float3 ndcStart = clipStart.xyz / clipStart.w;
-    float3 ndcEnd = clipEnd.xyz / clipEnd.w;
-
-    float rayLinearStart = LinearEyeDepth(ndcStart.z);
-    float rayLinearEnd   = LinearEyeDepth(ndcEnd.z);
-
-    float rayLinearDepth = lerp(rayLinearStart, rayLinearEnd, random * invSamples);
-    float rayLinearStep = (rayLinearEnd - rayLinearStart) * invSamples;
-
-    const float2 uvScale = float2(0.5, -0.5);
-    float2 uvStep = (ndcEnd.xy - ndcStart.xy) * (invSamples * uvScale);
-    float2 uv = mad(ndcStart.xy, uvScale, 0.5) + uvStep * random;
-
-    [loop]
-    for (int i = 0; i < CONTACT_SHADOWS_SAMPLES; i++)
-    {
-        if (any(uv < 0.0) || any(uv > 1.0))
-            break;
-
-        float pointDepth = SceneTexturesStruct_SceneDepthTexture.SampleLevel(View_SharedPointClampedSampler, uv, 0).r;
-        float bilinearDepth = SceneTexturesStruct_SceneDepthTexture.SampleLevel(View_SharedBilinearClampedSampler, uv, 0).r;
-
-        float2 depths = float2(pointDepth, bilinearDepth);
-        float2 linearDepths = View_InvDeviceZToWorldZTransform.z / (depths - View_InvDeviceZToWorldZTransform.w);
-
-        float minDepth = min(linearDepths.x, linearDepths.y);
-        float maxDepth = max(linearDepths.x, linearDepths.y);
-
-        float penetration = rayLinearDepth - minDepth;
-        float depthDistance = maxDepth - rayLinearDepth;
-
-        if (depthDistance < 0.0 && penetration < CONTACT_SHADOWS_THICKNESS)
-            return 0.0;
-
-        rayLinearDepth += rayLinearStep;
-        uv += uvStep;
-    }
-
-    return 1.0;
-}
-```
-
-<p float="left">
-    <img src="content/singleDepth.png" width="49%" />
-    <img src="content/dualDepth.png" width="49%" />
-</p>
-
-*Left: Single Depth Sample | Right: Point and Bilinear Depth Sampling*
-
-Checking the timings...
-
-<p float="left">
-    <img src="content/timing-dual-depth.png" width="100%" />
-</p>
-
-```0.59ms```, quite a bit more than just singular depth sampling. For that cost to quality ratio I honestly would probably rather just increase sample counts, but you can see the options. 
-
-But there is an alternative to this!
-
-#### Bonus: Depth Point Sampling
-
-Another intresting idea from the same place "[Rendering Tiny Glades With Entirely Too Much Ray Marching](https://www.youtube.com/watch?v=jusWW2pPnA0)" for improving the results of their contact shadows was actually sampling the depth texture using point sampling rather than bilinear filtering. While for the most part the point sampled depth was intended to be used in tandem with the bilinear sampled one, using it by itself actually can lead to better results in some cases.
-
-```HLSL
-//bilinear depth
-//float sampledDepth = SceneTexturesStruct_SceneDepthTexture.SampleLevel(View_SharedBilinearClampedSampler, vector_sampleUV, 0).r;
-
-//point depth
-float sampledDepth = SceneTexturesStruct_SceneDepthTexture.SampleLevel(View_SharedPointClampedSampler, vector_sampleUV, 0).r;
-```
-
-These screenshots are from a different capture but it's one case where the benifits of using point sampling were quite obvious.
-
-<p float="left">
-    <img src="content/bilinear-sampling.png" width="49%" />
-    <img src="content/point-sampling.png" width="49%" />
-</p>
-
-*Left: Single Bilinear Depth Sampling | Right: Single Point Depth Sampling*
-
-No timings on this because it's effectively free, all we are doing is just sampling the same depth texture that we did before but with point sampling instead of bilinear. It helps with reducing self-occlusion.
+[*NOTE: Click here if you want to see 1920x1080 timings.*](#timings-on-1920x1080-and-3840x2160)
 
 #### Bonus: Checkerboard Rendering Optimization
 
@@ -1120,11 +1021,110 @@ Here are the final timings now...
 
 Roughly ```0.43ms```, not as big as I was expecting. It's definetly a net positive for performance but it's only a small improvement. Like I said earlier if you really want to squeeze every ounce out of this this is something that you can do that doesn't mangle your final effect too bad.
 
+#### Bonus: Dual Depth Sampling
+
+Another quality bonus, but in "[Rendering Tiny Glades With Entirely Too Much Ray Marching](https://www.youtube.com/watch?v=jusWW2pPnA0)" it was demonstrated that for their contact shadow implementations they improved shading results by sampling the depth textures twice *(One with point sampling, the other with bilinear filtering)*. The result was a very noticable reduction in contact shadow self-occlusion issues. 
+
+The only reason I'm not going forward with this, is while it does improve the quality, it means 1 extra depth texture sample now in the loop *(2 depth texture samples)* which makes it quite a bit more expensive.
+
+```HLSL
+float ContactShadowClipSpaceDualDepth(
+    float3 vector_worldPosition,
+    float3 vector_worldNormal,
+    float3 vector_worldLightDirection,
+    float random)
+{
+    float invSamples = rcp(CONTACT_SHADOWS_SAMPLES);
+
+    float3 rayOrigin = vector_worldPosition;
+    float4 clipStart = mul(View_WorldToClip, float4(rayOrigin, 1));
+    float4 clipEnd = mul(View_WorldToClip, float4(rayOrigin + vector_worldLightDirection * CONTACT_SHADOWS_RAY_LENGTH, 1));
+
+    float3 ndcStart = clipStart.xyz / clipStart.w;
+    float3 ndcEnd = clipEnd.xyz / clipEnd.w;
+
+    float rayLinearStart = LinearEyeDepth(ndcStart.z);
+    float rayLinearEnd   = LinearEyeDepth(ndcEnd.z);
+
+    float rayLinearDepth = lerp(rayLinearStart, rayLinearEnd, random * invSamples);
+    float rayLinearStep = (rayLinearEnd - rayLinearStart) * invSamples;
+
+    const float2 uvScale = float2(0.5, -0.5);
+    float2 uvStep = (ndcEnd.xy - ndcStart.xy) * (invSamples * uvScale);
+    float2 uv = mad(ndcStart.xy, uvScale, 0.5) + uvStep * random;
+
+    [loop]
+    for (int i = 0; i < CONTACT_SHADOWS_SAMPLES; i++)
+    {
+        if (any(uv < 0.0) || any(uv > 1.0))
+            break;
+
+        float pointDepth = SceneTexturesStruct_SceneDepthTexture.SampleLevel(View_SharedPointClampedSampler, uv, 0).r;
+        float bilinearDepth = SceneTexturesStruct_SceneDepthTexture.SampleLevel(View_SharedBilinearClampedSampler, uv, 0).r;
+
+        float2 depths = float2(pointDepth, bilinearDepth);
+        float2 linearDepths = View_InvDeviceZToWorldZTransform.z / (depths - View_InvDeviceZToWorldZTransform.w);
+
+        float minDepth = min(linearDepths.x, linearDepths.y);
+        float maxDepth = max(linearDepths.x, linearDepths.y);
+
+        float penetration = rayLinearDepth - minDepth;
+        float depthDistance = maxDepth - rayLinearDepth;
+
+        if (depthDistance < 0.0 && penetration < CONTACT_SHADOWS_THICKNESS)
+            return 0.0;
+
+        rayLinearDepth += rayLinearStep;
+        uv += uvStep;
+    }
+
+    return 1.0;
+}
+```
+
+<p float="left">
+    <img src="content/singleDepth.png" width="49%" />
+    <img src="content/dualDepth.png" width="49%" />
+</p>
+
+*Left: Single Depth Sample | Right: Point and Bilinear Depth Sampling*
+
+Checking the timings...
+
+<p float="left">
+    <img src="content/timing-dual-depth.png" width="100%" />
+</p>
+
+```0.59ms```, quite a bit more than just singular depth sampling. For that cost to quality ratio I honestly would probably rather just increase sample counts, but you can see the options. 
+
+But there is an alternative to this!
+
+#### Bonus: Depth Point Sampling
+
+Another intresting idea from the same place again "[Rendering Tiny Glades With Entirely Too Much Ray Marching](https://www.youtube.com/watch?v=jusWW2pPnA0)" for improving the results of their contact shadows was if you are doing just one depth texture sample, doing it with point filtering actually leads to better results in some cases.
+
+```HLSL
+//using bilinear depth sampler
+//float sampledDepth = SceneTexturesStruct_SceneDepthTexture.SampleLevel(View_SharedBilinearClampedSampler, vector_sampleUV, 0).r;
+
+//using point depth sampler
+float sampledDepth = SceneTexturesStruct_SceneDepthTexture.SampleLevel(View_SharedPointClampedSampler, vector_sampleUV, 0).r;
+```
+
+These screenshots are from a different capture but it's one case where the benifits of using point sampling were quite obvious.
+
+<p float="left">
+    <img src="content/bilinear-sampling.png" width="49%" />
+    <img src="content/point-sampling.png" width="49%" />
+</p>
+
+*Left: Single Bilinear Depth Sampling | Right: Single Point Depth Sampling*
+
+No timings on this because it's effectively free. All we are doing is just sampling the same depth texture that we did before but with point filtering instead of bilinear, Helping with self-occlusion artifacts.
+
 ## Final Results
 
-With that we have sucessfully managed to implement contact shadows into FF7 Rebirth!
-
-For showcase let's show the raw light attenuation term that the game was originally using, and progressively add the techniques that we introduced.
+With that we have sucessfully managed to implement contact shadows into FF7 Rebirth! For showcase let's show the raw light attenuation term that the game was originally using, and progressively add the techniques that we introduced.
 
 <p float="left">
     <img src="content/original-attenuation.jpg" width="100%" />
@@ -1150,7 +1150,11 @@ Now with our final optimized results...
     <img src="content/contact-shadows-optimized-result.jpg" width="100%" />
 </p>
 
-It's looking better than ever! Now I do want to point out something very important, because in deferred rendering lights are shaded in full screen pixel draws usually. It means every light is shaded this way. So contact shadows can also be used for local lights for a similar cost as well to the directional lights, and arguably in some areas within rebirth this is the one place that would definetly give you the most bang for your buck.
+It's looking better than ever! 
+
+Now I do want to point out something very important, because in deferred rendering, generally every light are is shaded in a full screen pixel draw. It can be any light, doesn't have to just be directional lighting, so contact shadows can also be used for local lights for the same cost as we were doing before. 
+
+This is quite big because arguably in some areas within rebirth this is the one place that would definetly give you the most bang for your buck as some of these smaller local lights have shadow casting completely disabled. Adding contact shadows would allow them to cheaply add shadow detail back into the scene.
 
 <p float="left">
     <img src="content/local-light-original.jpg" width="49%" />
@@ -1163,7 +1167,7 @@ It's looking better than ever! Now I do want to point out something very importa
 
 Now this was done just through RenderDoc but there is a whole other part of this story...
 
-I built a Shader Injector mod, that allows me to actually take this modified RenderDoc shader, compile it and replace the original shader bytecode at runtime within the actual game so I could play with this modified shader during gameplay... and it's awesome!
+I built a Shader Injector mod *(that is a work in progress at the time of writing)*, that allows me to actually take this modified RenderDoc shader, compile it and replace the original shader bytecode at runtime within the actual game so I could play with this modified shader during gameplay... and it's awesome!
 
 [Shader Injector Mod Preview Video](https://www.youtube.com/watch?v=ta1WpIeoP1s)
 
@@ -1172,19 +1176,49 @@ I built a Shader Injector mod, that allows me to actually take this modified Ren
 This is an extra bonus but I wanted to see how the timings scaled when going from native 3840x2160 that we were working with, down to 1920x1080. Again using an RTX 3080, playing in the same game area.
 
 ***Frame Budget Guide***
-- 30 FPS Frame-Time Budget: 33.33ms
-- 60 FPS Frame-Time Budget: 16.67ms
-- 120 FPS Frame-Time Budget: 8.33ms
+- **30 FPS** Frame-Time Budget: 33.33ms
+- **60 FPS** Frame-Time Budget: 16.67ms
+- **120 FPS** Frame-Time Budget: 8.33ms
 
-First looking at the total frametime of the game, the graphics settings are maxed out but the resolution is now native 1920x1080 instead of 3840x2160 like before.
+#### 3840 x 2160
+
+Quick refresher, timings on an RTX 3080, maxed out at native 3840x2160 were as follows...
+
+<p float="left">
+    <img src="content/timing-entire-frame.png" width="100%" />
+</p>
+
+Roughly ```34.5ms```, effectively 30 FPS. The timings for the original Directional Pixel Light Shader that the game is using...
+
+<p float="left">
+    <img src="content/timing-original-shader.png" width="100%" />
+</p>
+
+```0.38ms - 0.40ms```, then the reverse engineered shader base...
+
+<p float="left">
+    <img src="content/timing-base.png" width="100%" />
+</p>
+
+```0.208ms - 0.21ms```, then adding the micro shadows + contact shadows...
+
+<p float="left">
+    <img src="content/timing-final.png" width="100%" />
+</p>
+
+Roughly ```0.44ms```, which is not bad. Quick subtraction math yields that the contact shadows implementation at native 4K on an RTX 3080 costs ```0.23ms```.
+
+#### 1920 x 1080
+
+Now we drop the resolution to 1080p which would give us significant performane gains. First looking at the total frametime of the game, the graphics settings are maxed out just like before but the resolution is now native 1920x1080.
 
 <p float="left">
     <img src="content/timing-original-full-1080.png" width="100%" />
 </p>
 
-Roughly ```14.23ms```, which is accurate. When dropping the game down to 1080 the game runs much better and can hit a 60 FPS+ framerate, now let's check the timing on the original shader.
+Roughly ```14.23ms```, which is accurate. Dropping the game down to that resolution gives me much better performance, allowing me to hit 60 FPS+ framerate. Let's check the timing of the original shader at this resolution.
 
-It's worth pointing out here that because things are much "faster" the milisecond timings values are much smaller, and given the fact that RenderDoc has quite a bit of noise when doing a replay timings, some of these values may not be 100% accurate. But anyway, lets check the original shader!
+It's worth pointing out here that because things are much "faster" the milisecond timings values are much smaller, which makes it a little more difficult. *(RenderDoc has quite a bit of noise when doing a replay timings, some of these values may not be 100% accurate)* But anyway, lets check the original shader!
 
 <p float="left">
     <img src="content/timing-original-shader-1080.png" width="100%" />
@@ -1202,9 +1236,9 @@ Roughly ```0.055ms```, just like we saw before the reverse engineered shader is 
     <img src="content/timing-final-1080.png" width="100%" />
 </p>
 
-Roughly ```0.088ms```, yep it lines up with what we were seeing prior. Doing the quick subtraction math that means that at native resolution 1920x1080 the contact shadows we are adding is roughly ```0.033ms```, which is not bad at all!
+Roughly ```0.088ms```, yep it lines up with what we were saw prior. Doing the quick subtraction math yields that at native resolution 1920x1080 on an RTX 3080 in the same game area, contact shadows cost ```0.033ms```, which is not bad at all!
 
-For this frame we are still in excess of roughly ```2.5ms``` before we hit the 60 FPS frame-time budget. If one desired that is plenty of room to scale up the effect quality wise to get some more oompf!
+For this frame we are still in excess of ```2.5ms``` before we hit the 60 FPS frame-time ceiling. If one desired that is plenty of room to scale up the effect quality wise to get some more oompf!
 
 # References / Sources
 List of references that helped with my implementations and understanding.
