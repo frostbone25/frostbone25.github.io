@@ -65,6 +65,7 @@ Sharing my personal notes and experimentation with improving the overall indirec
     - [SSR Timings](#ssr-timings)
     - [SSR In-Game](#ssr-in-game)
 - [Bonus: Screen Space Ground Truth Visibility Bitmask Ambient Occlusion + Global Illumination](#bonus-screen-space-ground-truth-visibility-bitmask-ambient-occlusion--global-illumination)
+- [Conclusion](#conclusion)
 - [References / Sources](#references--sources)
 
 ## Preface
@@ -1487,6 +1488,26 @@ Yikes! ```8.14ms```, this is not what you want for any rendering draw as this co
 In addition to add insult into injury there is no filtering that is done. The only filtering that exists is the game's TAA/DLSS which for the most part does a suprisingly good job at mitigating noise artifacts but still it is quite prevelant even in low light areas.
 
 Ideally from here when I'm able to [introduce rendering passes](https://frostbone25.github.io/p/adventures-global-illumination-downscaling/), the first primary objective is taking these passes and doing a unique draw for SSGI/AO at a much lower screen resolution. From there we can do [filtering](https://frostbone25.github.io/p/adventures-global-illumination-downscaling/) at a reduced resolution as well to reduce the noise and improve the quality, and then conversely [introduce a couple of upsampling draws](https://frostbone25.github.io/p/adventures-global-illumination-downscaling/) to scale the SSGI/AO back up to screen resolution at good quality. [I've done this before](https://frostbone25.github.io/p/adventures-global-illumination-downscaling/) in the past with lighting buffers before and there are significant visual and performance gains when doing so, so this is currently the next big thing to do.
+
+# Conclusion
+
+All in all I'm pretty happy with what I've been able to achieve for the most part! 
+
+I would like to leave with some my own personal thoughts as I've been paying close attention to the discourse surrounding the mod. The response to it though has been overwhelmingly positive, which says alot and definetly is something I think should be considered for the future of the games. *(I'd be happy to lend a hand if necessary)*
+
+With that said there is a vocal minority voicing concerns regarding that this mod shifting the original "art-direction" of the scenes/areas in the game. While for the most part they are correct, what is missing is that this visual upgrade is ultimately "incomplete" without collaboration with the original art-team. This is the final layer that would be achieved if changes were done in an actual development context.
+
+Currently I cannot dial everything in 100% because on the whole the shader changes apply across the entire game. What takes these improvements to the next level, is doing it in collaboration with the original art-team behind the game. This kind of relationship mirrors that in the industry where in my position with this mod I would be part of the "tech-art" team, working in tandem with the character/environment artists to achieve the most optimal results with all of the accuracy improvements to the rendering. Dialing in settings for specific game assets/areas.
+
+A small demonstration of this, one of my friends and testers with the Shader Injector mod [(Ninjagrime)](https://x.com/ninjagrime1) is the author of quite a few cosmetic mods for the games as a whole. However the way they authored their ambient occlusion maps originally for their [Advent Children Cloud Costume](https://www.nexusmods.com/finalfantasy7rebirth/mods/562) here did not play nice due to the [Micro Shadows technique](https://frostbone25.github.io/p/ff7-rebirth-contact-shadows/#micro-shadows) over occluding the color and specular reflections. While on the whole this worked great for the majority of the environmental art adding in tons of rich detail, in certain cases like this it can reveal sore spots for imperfectly adjusted/authored ambient occlusion maps. With a bit of work we managed to track down the issue, and properly rebuild the intended ambient occlusion maps that matched the expected standard of the game materials. Along with some color adjustments we were able to achieve the final result in collaboration.
+
+![tech-art-example.png](content/tech-art-example.png)
+
+The final output is a much stronger final result than the original base game with that original cosmetic mod. In combination with the underlying technical improvements to the rendering, the art has been re-adjusted to retain the original style and the final results are oustanding! This is only a small scale adjustment granted on just character materials, but these kinds of adjustments are ultimately what needs to be done in collaboration with the rest of the art of the game.
+
+The final parting note also is for those that conflate technical shading improvements/fixes with the "destruction" of the original artistic decisions. I would invite them to instead take a closer look at the first game in the series FF7 Remake which set a very high bar both artistically/technically. Much of the visual flaws that unfortunately appeared here in Rebirth are due to technical limitations that were not present in the first game. The most notable one of course being specular light leak that most of this article spent resolving. This is common for many titles, and the line regarding what constitutes an intentional artistic decision, versus one that was made imperfectly out of technical constraints is can blurry when looking at the final product. Though considering that the first game Final Fantasy 7 Reamke Intergrade recieved a graphics update, I do not think these perspectives ultimately hold any weight as that proves that when the team given the opprotunity to improve the presentation it will be jumped at.
+
+To add on to that, in both games feature pre-rendered cinematic cutscenes that have a drastically superior bar of quality that ultimately to many of us represent the designers/developers true vision of the games if they were not bound by production/hardware constraints. Many of these improvements to the rendering on the game bring the visuals closer to those goal posts.
 
 # References / Sources
 List of references that helped with my implementations and understanding.
