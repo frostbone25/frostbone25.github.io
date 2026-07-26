@@ -74,7 +74,7 @@ Sharing my personal notes and experimentation with improving the overall indirec
 
 In a [previous article](https://frostbone25.github.io/p/ff7-rebirth-contact-shadows/#timings-on-1920x1080-and-3840x2160) I was exploring the idea of implementing contact shadows into Final Fantasy 7 Rebirth in an effort to improve the quality of it's direct lighting terms. I was able to do it quite sucessfully, and after building a framework that would allow me to run that modified shader in-game during runtime, this was released to the public as the 1.0 version of the [Shader Injector](https://www.nexusmods.com/finalfantasy7rebirth/mods/2153) mod.
 
-Initally I thought I was done, I had done what I set out to do... but because I spent all of this time building the Shader Injector framework which allowed me to replace multiple shaders within the game, I had the thought... 
+Initally I thought I was done, I had done what I set out to do... but because I spent all of this time building the Shader Injector framework which allowed me to replace multiple shaders within the game, I had the very dangerous thought... 
 
 What else can I do with the lighting presentation of the game? 
 
@@ -182,7 +182,9 @@ Stepping forward in the rendering pipeline have a large number of passes that ha
 
 ![renderdoc-direct-light-only](content/renderdoc-direct-light-only.png)
 
-Ok, the source of those leaks are definetly not here and this is to be expected. It's dark of course in this pass because ambient/reflection shading has not been done yet. Direct lighting is explicit, so shading diffuse/specular is always good quality. Though with [Shader Injector 1.0](https://frostbone25.github.io/p/ff7-rebirth-contact-shadows/) I made diffuse BRDF adjustments and added contact shadows to the local/directional light shaders. The resulting pass with those changes looks like so...
+Ok, the source of those leaks are definetly not here and this is to be expected. It's dark of course in this pass because ambient/reflection shading has not been done yet. Direct lighting is explicit, so shading diffuse/specular is usually good quality barring some shadow cutbacks that might be done for some light sources. 
+
+Though with [Shader Injector 1.0](https://frostbone25.github.io/p/ff7-rebirth-contact-shadows/) I made diffuse BRDF adjustments and added contact shadows to the local/directional light shaders. The resulting pass with those changes looks like so...
 
 ![renderdoc-direct-light-shadows](content/renderdoc-direct-light-shadows.png)
 
