@@ -1491,11 +1491,11 @@ Ideally from here when I'm able to [introduce rendering passes](https://frostbon
 
 # Conclusion
 
-All in all I'm pretty happy with what I've been able to achieve for the most part! 
+All in all I'm pretty happy with what I've been able to achieve for the most part! Even suprised myself in certain areas what could be done.
 
-I would like to leave with some my own personal thoughts as I've been paying close attention to the discourse surrounding the mod. The response to it though has been overwhelmingly positive, which says alot and definetly is something I think should be considered for the future of the games. *(I'd be happy to lend a hand if necessary)*
+I hope that eventually some of these changes can be implemented *(or atleast considered and implemented in some fashion)* into the games. I have provided replay timings of the shaders with the additions and for the most part I believe that many of them can make it to all platforms that the game is deployed on without any noticable performance penalties. *(I'd be happy to lend a hand if necessary)*
 
-With that said there is a vocal minority voicing concerns regarding that this mod shifting the original "art-direction" of the scenes/areas in the game. While for the most part they are correct, what is missing is that this visual upgrade is ultimately "incomplete" without collaboration with the original art-team. This is the final layer that would be achieved if changes were done in an actual development context.
+I would like to leave with some my own personal thoughts as I've been paying close attention to the discourse surrounding the mod. The response to it though has been overwhelmingly positive, which says alot and definetly is something I think should be considered for the future of the games. With that said there are a few that voice their concerns about the mod shifting the original "art-direction" of the scenes/areas in the game. While for some areas they are correct, what is missing is that this visual upgrade is ultimately "incomplete" without collaboration with the original art-team. This is the final layer that would be achieved if changes were done in an actual development context.
 
 Currently I cannot dial everything in 100% because on the whole the shader changes apply across the entire game. What takes these improvements to the next level, is doing it in collaboration with the original art-team behind the game. This kind of relationship mirrors that in the industry where in my position with this mod I would be part of the "tech-art" team, working in tandem with the character/environment artists to achieve the most optimal results with all of the accuracy improvements to the rendering. Dialing in settings for specific game assets/areas.
 
