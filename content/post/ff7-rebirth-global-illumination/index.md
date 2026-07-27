@@ -214,7 +214,7 @@ Let's go ahead and look at the next rendering pass..
 
 ![ssr-raw](content/ssr-raw.png)
 
-This is the screen space reflections pass, and I'm definetly seeing a potential source of problems in here. The SSR appears to be reflecting framebuffer values in the past as you can see a semblance of the original white-washed environment showing up in the colors. The good news is that this tells me correcting the shading terms will propogate natrually to SSR during runtime which is good. 
+This is the screen space reflections pass, and I'm definetly seeing a potential source of problems in here. The SSR appears to be reflecting framebuffer values in the past as you can see a semblance of the original white-washed environment showing up in the colors. The good news is that this tells me correcting the shading terms will propogate naturally to SSR during runtime which is good. 
 
 For the most part this looks good though I am seeing a strange thing here, that being I recall that the materials in the environment are quite rough and are made up of wood. Yet when we look closely at the reflections they actually appear pin sharp, when really they should be much rougher and blurrier. *[(Wood is not a perfect reflector after all)](https://beamandbaron.com/cdn/shop/files/WalnutFlooring-1.jpg?v=1761251948)*. This can certainly be improved upon later.
 
@@ -615,14 +615,14 @@ While generally I might be ok with this idea, and it's perfectly sound in theory
 ***Left:*** *Isolated Cubemap "Irradiance"*
 ***Right:*** *Baked Global Illumination Probes Only*
 
-For some areas we do get increased contrast thanks to this blending but we lose out on accuracy and other aspects that should be coming from baked lighting term anyway. When one portion of that equation is "slacking" it will fudge the rest of the results with it. If the cubemaps had more coverage and "frequency" to begin with throughout the game world then I'd think this would be fine and would even look better in many conditions but unfortunately this isn't the case. Which leads to some of the result's you saw above. Admittedly it's a small difference in some areas, but in others like with the bridge shot it creates a final result that is quite different. To get around this I elected just to keep things simple instead, and we only sample from the baked global illumination light probes.
+For some areas we do get increased contrast thanks to this blending but we lose out on accuracy and other aspects that should be coming from baked lighting term anyway. When one portion of that equation is "slacking" it will fudge the rest of the results with it. If the cubemaps had more coverage and "frequency" to begin with throughout the game world then I'd think this would be fine and would even look better in many conditions but unfortunately this isn't the case. Which leads to some of the result's you saw above. Admittedly it's a small difference in some areas, but in others like with the bridge shot it creates a final result that is quite different to what it's supposed to be. To get around this I elected just to keep things simple instead, have it to where we only sample from the baked global illumination light probes.
 
 ```HLSL
 //new
 environment.irradiance = irradianceVolume.rgb;
 ```
 
-We avoid the problem with before of trying to blend these light probes with reflection probes, and keep things simple and consistent. This also saves us from extra texture samples later as we only just sample the reflection probes for reflections, not also sampling them again for an approximate "irradiance". Again I would like to point out that if the reflection probes were more frequent I'd probably stay with it since it would improve accuracy, but considering how sparse/inaccurate are to begin with it's better to just keep it simple here.
+We avoid the problem with before of trying to blend these light probes with reflection probes, and this keep things simple and consistent. This also saves us from extra texture samples later as we only just sample the reflection probes for reflections, not also sampling them again for an approximate "irradiance". Again I would like to point out that if the reflection probes were more frequent I'd probably stay with it since it would improve accuracy, but considering how sparse/inaccurate are to begin with it's better to just keep it simple here.
 
 #### Character Shading
 
@@ -635,7 +635,7 @@ With all of this work that we are doing improving irradiance/radiance this is so
 
 You can see here that the original game's irradiance/radiance term ends up adding too much "shading" and contrast here that winds up creating very awkward looking faces in many areas. This is again due to the fact that they try to combine this baked GI data with "reflection" probes. In combination with the specular/reflection light leak that we are working on mitigating this is leading to quite unflattering looks for these characters for most of the game world during gameplay. *(NOTE: this isn't an issue in cutscenes because artists explicitly go in and bring in lights and even reduce the environmental lighting contribution for those segments. In other words they cheat, but this is very typical and done even in film/tv-shows)* In addition the original application of the game's SSAO was too light and it unfortunately does nothing here to help with the shading of these characters.
 
-When we reduce the specular light leak, and also force the irradiance term to only sample the baked global illumination lighting probes directly *(rather than blending with reflection probes)* their apperance looks much more natrual especially when they are in ambient light. We don't recieve as much "shading" as we did before that was contributing to the unflattering apperance to begin with. 
+When we reduce the specular light leak, and also force the irradiance term to only sample the baked global illumination lighting probes directly *(rather than blending with reflection probes)* their apperance looks much more natural especially when they are in ambient light. We don't recieve as much "shading" as we did before that was contributing to the unflattering apperance to begin with. 
 
 <p float="left">
     <img src="content/character-og.jpg" width="49%" />
@@ -653,13 +653,13 @@ When we reduce the specular light leak, and also force the irradiance term to on
 ***Left:*** *Original Shading*
 ***Right:*** *Improved Shading (Reduced Specular Light Leak + Simplified Irradiance)*
 
-Now granted their looks do flatten out, but this is actually normal considering that they are in ambient/shadowed lighting conditions to begin with! So this is accurate to the real world, and now their looks compared to before are more flattering in general. In addition also with some of the slight reworks to how occlusion is applied to both radiance/irradiance, it's more prevelant now which helps give shape and of course is accurate to the real world as bounced ambient light cannot penetrate through most areas unblocked.
+Now granted their looks do flatten out, but this is actually normal considering that they are in ambient/shadowed lighting conditions to begin with! So this is accurate to the real world, and now their looks compared to before are more flattering in general. In addition also with some of the slight reworks to how occlusion is applied to both radiance/irradiance, it's more obvious now which helps give extra shape to the final look. Importantly it's accurate to the real world since bounced ambient light doesn't penetrate through most areas unblocked.
 
 But... I'm not done yet! I think there is something else we can add here that will drastically improve the final apperance of the characters *(and even environments)* in these ambient lighting conditions. A camera light.
 
-In photography you learn very early on that it is important to capture your subjects in good light. In most natrual lighting conditions in the real world trying to capture faces in a flattering way can be quite difficult and often result's can be quite unflattering. Sure if you are in certain areas the look of natrual light can look quite good *(especially if you have control and are able to shape it)* but on the whole this is usually not the case.
+In photography you learn very early on that it is important to capture your subjects in good light. In most natural lighting conditions in the real world trying to capture faces in a flattering way can be quite difficult and often result's can be quite unflattering. Sure if you are in certain areas the look of natural light can look quite good *(especially if you have control and are able to shape it)* but on the whole this is usually not the case.
 
-One very common and important practice that is done is to introduce your own light, and often this is done with a flash. This flash adds in new light onto your subjects, filling in shadows when you are in less than ideal lighting conditions. Importantly along with filling in shadows, it introduces an eye highlight when done correctly.
+One very common and important practice that is done is to introduce your own lights, and often this is done with a flash. This flash adds in new light onto your subjects, filling in shadows when you are in less than ideal lighting conditions. Importantly along with filling in shadows, it introduces an eye highlight when done correctly.
 
 <p float="left">
     <img src="content/real-world-flash1.jpg" width="49%" />
@@ -668,7 +668,7 @@ One very common and important practice that is done is to introduce your own lig
 
 *[Real World Reference A](https://pbs.twimg.com/media/DdVrwxUVMAAZ1Rs.jpg) | [Real World Reference B](https://capitalphotographycenter.com/images/uploads/%C2%A9Marie_Joabar_Fill_Flash_-4.jpg)*
 
-The final result is much more flattering for the subjects, and turning the original less than ideal natrual lighting condition, into a more acceptable one. Now steps beyond this of course is that in photography *(or even in film/tv/games)* you can introduce more elaborate lighting setups that can either ["motivate"](https://www.studiobinder.com/blog/what-is-motivated-lighting-in-film/) the natrual light, or you can supress the environmental light with your [own artistic lighting environment](https://www.cined.com/unmotivated-light-as-a-storytelling-tool-when-is-it-appropriate/) entirely. 
+The final result is much more flattering for the subjects, and turning the original less than ideal natural lighting condition, into a more acceptable one. Now steps beyond this of course is that in photography *(or even in film/tv/games)* you can introduce more elaborate lighting setups that can either ["motivate"](https://www.studiobinder.com/blog/what-is-motivated-lighting-in-film/) the natural light, or you can supress the environmental light with your [own artistic lighting environment](https://www.cined.com/unmotivated-light-as-a-storytelling-tool-when-is-it-appropriate/) entirely. 
 
 In my case, I elected to keep it simple and try to follow the principles of ["motivated"](https://www.studiobinder.com/blog/what-is-motivated-lighting-in-film/) light so this new camera light wouldn't draw attention to itself. It should only elevate what was originally there.
 
@@ -688,7 +688,7 @@ In my case, I elected to keep it simple and try to follow the principles of ["mo
 ***Left:*** *Improved Shading (Reduced Specular Light Leak + Simplified Irradiance)*
 ***Right:*** *Camera Light + Improved Shading (Reduced Specular Light Leak + Simplified Irradiance)*
 
-It's subtle, but it adds alot to the final apperance. It lifts the exposure of characters when in shadow and close to camera. Importantly also because it's a light source it casts an eye highlight that gives the characters more life when in these kinds of conditions. The light color is derived from the baked global illumination probe data so the color matches ambient lighting conditions, ultimately the difference here is in the actual light itself and not with the color. Wanting ultimately to preserve the original look and art-direction.
+It's subtle, and you'll likely need to open the images in a new tab and flip back and fourth to see it's effects but it adds alot to the final apperance. It lifts the exposure of characters when in shadow and close to camera. Importantly also because it's a light source that casts an eye highlight that gives the characters more life when in these kinds of lighting conditions. The light color is derived from the baked global illumination probe data so the color matches ambient lighting conditions, so ultimately the difference here is in the actual light itself and not with the color. Wanting ultimately to preserve the original look and art-direction.
 
 ```HLSL
 #define CAMERA_AMBIENT_LIGHT
