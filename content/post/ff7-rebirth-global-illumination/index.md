@@ -930,7 +930,7 @@ The first primary one here is that it's actually possible to "reconstruct" the o
 
 Granted it's not perfect, and definetly doesn't help that we are working with data that was already converted from a different format *(and a uniform average color)* but it should still work reasonably well. The ultimate goal of what we are trying to do is turn this into a rough reflection term that we can use for a majority of the rough reflections in the game, which is also where many of those awkward reflection leaks come from.
 
-In spherical harmonics typically when projecting the lighting environment, you project are projecting the "radiance" which is effectively the incoming light, into spherical harmonic coefficents. *(think if it like encoding the original lighting environment down into tiny cubemap)* Then you do what's called "irradiance convolution" which turns these "radiance" coefficents into "irradiance" which gives you your final diffuse lighting. 
+In spherical harmonics typically when projecting the lighting environment, you are projecting the "radiance" which is effectively the incoming light, into spherical harmonic coefficents. *(think if it like encoding the original lighting environment down into tiny cubemap)* Then you do what's called "irradiance convolution" which turns these "radiance" coefficents into "irradiance" which gives you your final diffuse lighting. 
 
 In this case since we technically already have the diffuse lighting data in spherical harmonics from ambient cube, we can actually "undo" this irradiance convolution due to the nature of how that technique works, which is ultimately just multiplying some constants against the sets of coefficents. Theroetically this will give us back the original "radiance" term.
 
