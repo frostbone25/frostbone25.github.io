@@ -659,7 +659,7 @@ Now granted their looks do flatten out, but this is actually normal considering 
 
 But... I'm not done yet! I think there is something else we can add here that will drastically improve the final apperance of the characters *(and even environments)* in these ambient lighting conditions. A camera light.
 
-In photography you learn very early on that it is important to capture your subjects in good light. In most natural lighting conditions in the real world trying to capture faces in a flattering way can be quite difficult and often result's can be quite unflattering. Sure if you are in certain areas the look of natural light can look quite good *(especially if you have control and are able to shape it)* but on the whole this is usually not the case.
+In photography you learn very early on that it is important to capture your subjects in good light. In most natural lighting conditions in the real world trying to capture faces in a flattering way can be quite difficult and often result's can be quite the opposite. Sure if you are in certain areas the look of natural light can look quite good *(especially if you have control and are able to shape it)* but on the whole this is usually not the case.
 
 One very common and important practice that is done is to introduce your own lights, and often this is done with a flash. This flash adds in new light onto your subjects, filling in shadows when you are in less than ideal lighting conditions. Importantly along with filling in shadows, it introduces an eye highlight when done correctly.
 
@@ -670,7 +670,7 @@ One very common and important practice that is done is to introduce your own lig
 
 *[Real World Reference A](https://pbs.twimg.com/media/DdVrwxUVMAAZ1Rs.jpg) | [Real World Reference B](https://capitalphotographycenter.com/images/uploads/%C2%A9Marie_Joabar_Fill_Flash_-4.jpg)*
 
-The final result is much more flattering for the subjects, and turning the original less than ideal natural lighting condition, into a more acceptable one. Now steps beyond this of course is that in photography *(or even in film/tv/games)* you can introduce more elaborate lighting setups that can either ["motivate"](https://www.studiobinder.com/blog/what-is-motivated-lighting-in-film/) the natural light, or you can supress the environmental light with your [own artistic lighting environment](https://www.cined.com/unmotivated-light-as-a-storytelling-tool-when-is-it-appropriate/) entirely. 
+The final result is much more flattering for the subjects, and turning the original less than ideal natural lighting condition, into a more acceptable one. Now further steps beyond this of course is that in photography *(or even in film/tv/games)* you can introduce more elaborate lighting setups that can either ["motivate"](https://www.studiobinder.com/blog/what-is-motivated-lighting-in-film/) the natural light, or you can supress the environmental light with your [own artistic lighting environments](https://www.cined.com/unmotivated-light-as-a-storytelling-tool-when-is-it-appropriate/) entirely. 
 
 In my case, I elected to keep it simple and try to follow the principles of ["motivated"](https://www.studiobinder.com/blog/what-is-motivated-lighting-in-film/) light so this new camera light wouldn't draw attention to itself. It should only elevate what was originally there.
 
@@ -690,9 +690,9 @@ In my case, I elected to keep it simple and try to follow the principles of ["mo
 ***Left:*** *Improved Shading (Reduced Specular Light Leak + Simplified Irradiance)*
 ***Right:*** *Camera Light + Improved Shading (Reduced Specular Light Leak + Simplified Irradiance)*
 
-It's subtle, and you'll likely need to open the images in a new tab and flip back and fourth to see it's effects but it adds alot to the final apperance. It lifts the exposure of characters when in shadow and close to camera. Importantly also because it's a light source that casts an eye highlight that gives the characters more life when in these kinds of lighting conditions. The light color is derived from the baked global illumination probe data so the color matches ambient lighting conditions, so ultimately the difference here is in the actual light itself and not with the color. Wanting ultimately to preserve the original look and art-direction.
+It's subtle, and you'll likely need to open the images in a new tab and flip back and fourth to see it's effects but it adds alot to the final apperance. It lifts the exposure of characters when in shadow and close to camera. Importantly also because it's a light source, it also creates an eye highlight that gives the characters more life when in these kinds of gameplay lighting conditions. The light color is derived from the baked global illumination probe data so the color matches ambient lighting conditions, so ultimately the difference here is with the actual light values itself and not with the color. Importantly also, wanting to preserve most of the original look and art-direction.
 
-```HLSL
+```GLSL
 #define CAMERA_AMBIENT_LIGHT
 
 //in (cm) units
@@ -706,6 +706,7 @@ It's subtle, and you'll likely need to open the images in a new tab and flip bac
     float distanceToCamera = distance(View_WorldCameraOrigin, worldPosition);
     float falloff = rcp(distanceToCamera);
     falloff *= falloff; //inverse square
+
     float cameraAmbientLight = falloff;
     cameraAmbientLight = clamp(cameraAmbientLight * CAMERA_AMBIENT_LIGHT_RANGE, 0.0f, 1.0f) * CAMERA_AMBIENT_LIGHT_BRIGHTNESS;
     cameraAmbientLight *= saturate(dot(gbufferData.WorldNormal, vector_viewDirection));
@@ -713,7 +714,7 @@ It's subtle, and you'll likely need to open the images in a new tab and flip bac
 
     diffuse += cameraAmbientLight * globalIlluminationIrradiance;
     specular += globalIlluminationIrradiance * cameraAmbientLight * CalculateSpecularHighlight(gbufferData.WorldNormal, vector_viewDirection, gbufferData.Roughness) * CAMERA_AMBIENT_LIGHT_SPECULAR_BOOST;
-    #endif
+#endif
 ```
 
 *NOTE: The current implementation here admittedly is messy, but on the whole the effect is still incredibly cheap*.
