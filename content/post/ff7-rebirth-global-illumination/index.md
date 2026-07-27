@@ -721,13 +721,15 @@ It's subtle, and you'll likely need to open the images in a new tab and flip bac
 
 #### Final Reflection Environment Timings
 
+*NOTE: We are working with RenderDoc frame captures, which were captured on an RTX 3080 at native 3840x2160 with no dynamic resolution or DLSS. The game was also running at maximum graphical settings.*
+
 Since nowe we've essentially reached the end of the modifications for this lighting shader, what do to timings look like with all of our modifications?
 
 Starting first with the original ReflectionEnvironment shader this was our original timings.
 
 ![timings-env-original](content/timings-env-original.png)
 
-```2.16ms``` that's actually a little more expensive than I was expecting for what this shader is doing, but considering that it's effectively combing through the reflection probes within the game world this actually makes some sense. I still think there is room for improvement but overall it's not too bad considering what it's achieving. Checking our reverse engineered shader at the start before any modifications...
+```2.16ms``` that's actually a little more expensive than I was expecting, but considering that it's effectively combing the reflection probes within the game world *(and irradiance volumes)* this actually makes some sense. I still think there is room for improvement but overall it's not too bad considering what it's achieving. Checking our reverse engineered shader at the start before any modifications...
 
 ![timings-env-start](content/timings-env-start.png)
 
@@ -737,9 +739,11 @@ Starting first with the original ReflectionEnvironment shader this was our origi
 
 ```1.97ms```, it's actually faster? At first I thought this was a fluke and that I accidentally had some terms disabled or omitted but nope this is the timings of the shader with it's modifications. 
 
-As it turns out [earlier when I modified the game's "irradiance" term](#modifying-baked-irradiancediffuse-term) to only sample from the baked global illumination probes, instead of trying to also combine the approximate "irradiance" terms from the reflection probes this actually saved us some performance! This is because when simplifying that irradiance term, we just only do a single texture sample ultimately and we just use that "irradiance" render target from a previous draw directly. The logic also when it comes to sampling cubemap reflections from the reflection volumes in the game world, we actually do less work because we only then sample for reflections. Not doing another additional sample of those cubemap reflections again just to get an approximate "irradiance" term that was messing with our results.
+As it turns out [earlier when I modified the game's "irradiance" term](#modifying-baked-irradiancediffuse-term) to only sample from the baked global illumination probes, instead of trying to also combine the approximate "irradiance" terms from the reflection probes this actually saved us some performance! This is because when simplifying that irradiance term, we just only do a single texture sample ultimately and we just use that "irradiance" render target from a previous draw directly. 
 
-Sweet! Now let's move on to what I teased earlier, which was reworking that original "Radiance" term.
+The logic also when it comes to sampling cubemap reflections in the game world, we actually do less work because we only sample them for reflections. Not doing another additional sample of those same cubemap reflections again just to get an approximate "irradiance" term that was messing with our results.
+
+Sweet! Now let's move on to what I teased earlier, which was reworking that original "Radiance" term in the SampleGI shader.
 
 ## Turning Sample GI's "Reflection" to Reflection
 
