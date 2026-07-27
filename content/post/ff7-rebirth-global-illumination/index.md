@@ -214,9 +214,9 @@ Let's go ahead and look at the next rendering pass..
 
 ![ssr-raw](content/ssr-raw.png)
 
-This is the screen space reflections pass, and I'm definetly seeing a potential source of problems in here. The SSR appears to be reflecting framebuffer values in the past as you can see a semblance of the original white-washed environment showing up in the colors. The good news is that this tells me that correcting the shading terms means changes will propogate natrually to SSR during runtime which is good. 
+This is the screen space reflections pass, and I'm definetly seeing a potential source of problems in here. The SSR appears to be reflecting framebuffer values in the past as you can see a semblance of the original white-washed environment showing up in the colors. The good news is that this tells me correcting the shading terms will propogate natrually to SSR during runtime which is good. 
 
-For the most part this looks good though I am seeing a strange thing here, that being I recall that the materials in the environment are quite rough and are made up of wood. Yet when we look closely at the reflections they actually appear pin sharp, when really they should be much rougher and blurrier. *(Wood is not a perfect reflector after all)*. This can certainly be improved upon later.
+For the most part this looks good though I am seeing a strange thing here, that being I recall that the materials in the environment are quite rough and are made up of wood. Yet when we look closely at the reflections they actually appear pin sharp, when really they should be much rougher and blurrier. *[(Wood is not a perfect reflector after all)](https://beamandbaron.com/cdn/shop/files/WalnutFlooring-1.jpg?v=1761251948)*. This can certainly be improved upon later.
 
 Aside from that this looks ok for the most part. It is noisy and clearly running at 1 sample per pixel at full screen resolution, but considering the game has a decent TAA/DLSS pipeline later this isn't a huge problem.
 
@@ -256,7 +256,7 @@ Yep, a majority of this specular light leak and "wash" is coming from the reflec
 
 This certainly is showing us that again most of the reflection leaking is coming from this term specifically, so more confirmation.
 
-Now in the shader they do a few intresting things in this reflection term. Not only do they sample environmental cubemaps *(which is typical)* but they also take that Sample GI radiance term from before and actually blend it together with the environmental cubemaps. Primarily they use it to modulate or "tint" the cubemap reflections for most of the environment as a means of "squeezing" more variance out of their limited coverage to begin with.
+Now in the shader they do a few intresting things in this reflection term. Not only do they sample environmental cubemaps *(which is typical)* but they also take that Sample GI radiance term from before and actually blend it together with the environmental cubemaps. Primarily they use it to modulate or "tint" the cubemap reflections for most of the environment as a means of "squeezing" more variable reflections out of their limited cubemap coverage to begin with.
 
 ```HLSL
 float radianceVolumeLuminance = LuminanceRec709(radianceVolume.rgb);
@@ -276,7 +276,7 @@ float3 radianceTarget = cubemapReflectionLuminance * radianceVolume.rgb * radian
 environment.CubemapReflection = lerp(environment.CubemapReflection, radianceTarget, radianceReject) * cubemapRadianceAndRadianceVolume;
 ```
 
-In addition they also resample cubemap reflections twice? Once with the usual roughness to mip that is very commonly done to sample rough reflections from cubemaps. But then they also resample a "rough" cubemap reflection that of which is locked to mip level 4 which is quite rough. I found this quite peculiar honestly but in practice all of these terms they try to blend together to form the final reflection term.
+In addition they also resample cubemap reflections twice? Once with the usual roughness to mip that is very commonly done to sample rough reflections from cubemaps. But then they also resample a "rough" cubemap reflection that of which is locked to mip level 4 which is quite rough. I found this quite peculiar honestly but in practice all of these terms they try to blend together to form their final reflection term.
 
 Now if I'm honest and for brevity sake, my money from the source of the leaks was coming from the Cubemap Reflections *(Spoilers: I was right)* as in open world environments this would be something that I would expect would be cutback in terms of frequency and quality. So peeling back much of these blending terms, lets go ahead and look at the cubemap reflections and the baked GI radiance terms in isolation from eachother...
 
@@ -326,7 +326,7 @@ float3 fixedReflection = SafeNormalize(2.0 * (NoV * vector_normalDirection - vec
 float3 reflectionDirection = SafeNormalize(lerp(fixedReflection, vector_normalDirection, roughness * roughness * roughness));
 ```
 
-As it turns out, they are stretching the reflection direction according to surface roughness. Honestly I have no idea as to why this is happening... but in the name of theorizing and trying to be reasonable here are a couple of theories that I managed to come up with to try to understand why they might be doing this in the first place.
+As it turns out, they are stretching the reflection direction according to surface roughness. Honestly I have no idea as to why this is happening... but in the name of theorizing here are a couple of explanations that I managed to come up with to try to understand why they might be doing this in the first place.
 
 - Trying to extend coverage of SSR?
     - When SSR data is just at the edge of being cut off you can stretch the reflection to squeeze more coverage out for cheap without tracing more rays. However since stretched reflection vectors don't blend too well with the other unstretched reflection terms you might as well stretch all of them to retain consistency.
