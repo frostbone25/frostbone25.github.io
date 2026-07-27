@@ -1157,6 +1157,8 @@ The additions are an extra specular highlight on the opposite end of the dominan
 
 #### Sample GI Timings
 
+*NOTE: We are working with RenderDoc frame captures, which were captured on an RTX 3080 at native 3840x2160 with no dynamic resolution or DLSS. The game was also running at maximum graphical settings.*
+
 Housekeeping, gotta make sure everything is still in check! Performance matters after all! Checking the original RenderDoc replay timing of the original compute shader pass...
 
 ![](content/timings-sample-gi-og.png)
@@ -1397,9 +1399,11 @@ Granted this technique is not perfect, as we do lose some BRDF specular accuracy
 
 ### SSR Timings
 
+*NOTE: We are working with RenderDoc frame captures, which were captured on an RTX 3080 at native 3840x2160 with no dynamic resolution or DLSS. The game was also running at maximum graphical settings.*
+
 As usual, we have to check our timings. Can't just do things willy nilly and call it a day. We have to make sure we are still within a reasonable frame-time.
 
-The original shader timing within RenderDoc at 3840x2160 on an RTX 3080 is the following...
+The original shader timing within RenderDoc is the following...
 
 ![](content/timings-ssr-og.png)
 
@@ -1481,6 +1485,8 @@ Nice! You can see that the overall "directionality" of the scene is actually bet
 ***Right:*** *In-Game: Modified Shaders with GTVBGI*
 
 Now of course the current downsides to this implementation is the sheer cost of it in it's current state. Normally these effects are done in a much lower resolution, however currently due to framework limitations *(I can't introduce new rendering passes just yet)* these effects run at full-screen resolution... which is a very bad idea!
+
+*NOTE: We are working with RenderDoc frame captures, which were captured on an RTX 3080 at native 3840x2160 with no dynamic resolution or DLSS. The game was also running at maximum graphical settings.*
 
 ![](content/timings-env-final.png)
 
