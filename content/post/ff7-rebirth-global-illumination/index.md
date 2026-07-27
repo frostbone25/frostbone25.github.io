@@ -70,6 +70,8 @@ Sharing my personal notes and experimentation with improving the overall indirec
 
 ## Preface
 
+#### [Digital Foundry Video](https://www.youtube.com/watch?v=zBFViJCICUA)
+
 #### Context
 
 In a [previous article](https://frostbone25.github.io/p/ff7-rebirth-contact-shadows/#timings-on-1920x1080-and-3840x2160) I was exploring the idea of implementing contact shadows into Final Fantasy 7 Rebirth in an effort to improve the quality of it's direct lighting terms. I was able to do it quite sucessfully, and after building a framework that would allow me to run that modified shader in-game during runtime, this was released to the public as the 1.0 version of the [Shader Injector](https://www.nexusmods.com/finalfantasy7rebirth/mods/2153) mod.
