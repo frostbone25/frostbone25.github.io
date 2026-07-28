@@ -74,9 +74,9 @@ Sharing my personal notes and experimentation with improving the overall indirec
 
 #### Context
 
-In a [previous article](https://frostbone25.github.io/p/ff7-rebirth-contact-shadows/#timings-on-1920x1080-and-3840x2160) about a month ago I was exploring the idea of implementing contact shadows into Final Fantasy 7 Rebirth in an effort to improve the quality of it's direct lighting terms. I was able to do it quite sucessfully, and a week after that building a framework that would allow me to run that modified shader in-game during runtime, this was released to the public as the 1.0 version of the [Shader Injector](https://www.nexusmods.com/finalfantasy7rebirth/mods/2153) mod.
+In a [previous article](https://frostbone25.github.io/p/ff7-rebirth-contact-shadows/#timings-on-1920x1080-and-3840x2160) about a month ago I was exploring the idea of implementing contact shadows into Final Fantasy 7 Rebirth in an effort to improve the quality of it's direct lighting terms. I spent that week experimenting within RenderDoc, and then a week after that building the framework that would allow me to run that modified shader in-game during runtime. This was released to the public as the 1.0 version of the [Shader Injector](https://www.nexusmods.com/finalfantasy7rebirth/mods/2153) mod.
 
-Initally I thought I was done, I had done what I set out to do... but because I spent all of this time building the Shader Injector framework which allowed me to replace multiple shaders within the game, I had the very dangerous thought... 
+Initally I thought I was done, I had done what I set out to do... but because I spent all that time building the Shader Injector framework which allowed me to replace multiple shaders within the game, I had the very dangerous thought... 
 
 What else can I do with the lighting presentation of the game? 
 
