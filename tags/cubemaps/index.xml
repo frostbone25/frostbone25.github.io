@@ -1,0 +1,953 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Cubemaps on David Matos</title><link>https://frostbone25.github.io/tags/cubemaps/</link><description>Recent content in Cubemaps on David Matos</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Tue, 06 Jan 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://frostbone25.github.io/tags/cubemaps/index.xml" rel="self" type="application/rss+xml"/><item><title>Box Projected Cubemap Reflections</title><link>https://frostbone25.github.io/p/adventures-box-projected-reflections/</link><pubDate>Tue, 06 Jan 2026 00:00:00 +0000</pubDate><guid>https://frostbone25.github.io/p/adventures-box-projected-reflections/</guid><description>&lt;img src="https://frostbone25.github.io/p/adventures-box-projected-reflections/5-box-projectedGodotA.png" alt="Featured image of post Box Projected Cubemap Reflections" /&gt;&lt;p&gt;&lt;em&gt;By: David Matos&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;My adventures into improving Box Projected Specular Reflections!&lt;/p&gt;
+&lt;p&gt;&lt;a class="link" href="https://github.com/frostbone25/Unity-Improved-Box-Projected-Reflections/tree/main" target="_blank" rel="noopener"
+&gt;You can find the Github Repository Here!&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;NOTE: In-case it isn&amp;rsquo;t obvious, most of the examples/images shown here are of a pure metallic/reflective material to show the effects more clearly. Specifically the material is configured to be fully metallic, with smoothness/perceptualRoughness at 0.5 or 50%.&lt;/em&gt;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="2-box-projectedA.png" width="49%" /&gt;
+&lt;img src="5-box-projectedGodotA.png" width="49%" /&gt;
+&lt;/p&gt;
+&lt;h4 id="table-of-contents"&gt;&lt;a href="#table-of-contents" class="header-anchor"&gt;&lt;/a&gt;Table of Contents
+&lt;/h4&gt;&lt;ul&gt;
+&lt;li&gt;&lt;a class="link" href="#preface" &gt;Preface&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#contact-hardening" &gt;Contact Hardening&lt;/a&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a class="link" href="#contact-hardening-none" &gt;Contact Hardening: None&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#contact-hardening-approximated" &gt;Contact Hardening: Approximated&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#contact-hardening-hdrp-approximation--frostbite-engine" &gt;Contact Hardening: HDRP Approximation / Frostbite Engine&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#contact-hardening-godot-approximation" &gt;Contact Hardening: Godot Approximation&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#contact-hardening-raytraced" &gt;Contact Hardening: Raytraced&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#contact-hardening-raytracing-options" &gt;Contact Hardening: Raytracing Options&lt;/a&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a class="link" href="#static-noise-non-deterministic-sampling" &gt;Static Noise &lt;em&gt;(Non-Deterministic Sampling)&lt;/em&gt;&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#animated-noise-non-deterministic-sampling" &gt;Animated Noise &lt;em&gt;(Non-Deterministic Sampling)&lt;/em&gt;&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#deterministic-sampling" &gt;Deterministic Sampling&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#beveled-box-projection" &gt;Beveled Box Projection&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#box-based-specular-occlusion" &gt;Box Based Specular Occlusion&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#credits--sources" &gt;Credits / Sources&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h1 id="preface"&gt;&lt;a href="#preface" class="header-anchor"&gt;&lt;/a&gt;Preface
+&lt;/h1&gt;&lt;p&gt;Cubemap Reflections are a very common and simple way to provide reflection/specular data to a set of objects in a scene &lt;em&gt;(or a specific area within a scene)&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://frostbone25.github.io/p/adventures-box-projected-reflections/reflection-probe-gizmo.png"
+width="1117"
+height="662"
+srcset="https://frostbone25.github.io/p/adventures-box-projected-reflections/reflection-probe-gizmo_hu_21a95240f3a549.png 480w, https://frostbone25.github.io/p/adventures-box-projected-reflections/reflection-probe-gizmo_hu_23c4af0c933163c1.png 1024w"
+loading="lazy"
+alt="reflection-probe-gizmo"
+class="gallery-image"
+data-flex-grow="168"
+data-flex-basis="404px"
+&gt;&lt;/p&gt;
+&lt;p&gt;A probe is placed at a specific point, and at runtime &lt;em&gt;(or during baking)&lt;/em&gt; a camera captures the scene at 6 different orientations &lt;em&gt;(90 degrees, within a square)&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://frostbone25.github.io/p/adventures-box-projected-reflections/learn-open-gl-cubemap-graphic.png"
+width="700"
+height="525"
+srcset="https://frostbone25.github.io/p/adventures-box-projected-reflections/learn-open-gl-cubemap-graphic_hu_709251ad241ab52e.png 480w, https://frostbone25.github.io/p/adventures-box-projected-reflections/learn-open-gl-cubemap-graphic_hu_a8e539e5a91ef802.png 1024w"
+loading="lazy"
+alt="learn-open-gl-cubemap-graphic"
+class="gallery-image"
+data-flex-grow="133"
+data-flex-basis="320px"
+&gt;&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Graphic from &lt;a class="link" href="https://learnopengl.com/Advanced-OpenGL/Cubemaps" target="_blank" rel="noopener"
+&gt;LearnOpenGL&lt;/a&gt;&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Each of the faces of this &amp;ldquo;cube&amp;rdquo; are combined into a cubemap texture asset. Then this texture asset goes through an additional process step called &amp;ldquo;specular convolution&amp;rdquo; which effectively generates a convolved or &amp;ldquo;blurred&amp;rdquo; version of the cubemap that coresponds with &amp;ldquo;rougher&amp;rdquo; reflections that get stored in the mips of the texture. &lt;em&gt;(This is important so when the cubemap reflection gets sampled, objects with rougher surfaces can have blurrier reflections)&lt;/em&gt;&lt;/p&gt;
+&lt;table&gt;
+&lt;thead&gt;
+&lt;tr&gt;
+&lt;th&gt;Mip 0&lt;/th&gt;
+&lt;th&gt;Mip 1&lt;/th&gt;
+&lt;th&gt;Mip 2&lt;/th&gt;
+&lt;th&gt;Mip 3&lt;/th&gt;
+&lt;th&gt;Mip 4&lt;/th&gt;
+&lt;th&gt;Mip 5&lt;/th&gt;
+&lt;/tr&gt;
+&lt;/thead&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;img src="https://frostbone25.github.io/p/adventures-box-projected-reflections/mip0.png"
+width="1117"
+height="662"
+srcset="https://frostbone25.github.io/p/adventures-box-projected-reflections/mip0_hu_ad20ddef8f3ff653.png 480w, https://frostbone25.github.io/p/adventures-box-projected-reflections/mip0_hu_4660dbd104a47d65.png 1024w"
+loading="lazy"
+alt="mip0"
+class="gallery-image"
+data-flex-grow="168"
+data-flex-basis="404px"
+&gt;&lt;/td&gt;
+&lt;td&gt;&lt;img src="https://frostbone25.github.io/p/adventures-box-projected-reflections/mip1.png"
+width="1117"
+height="662"
+srcset="https://frostbone25.github.io/p/adventures-box-projected-reflections/mip1_hu_abc6a73e064394e1.png 480w, https://frostbone25.github.io/p/adventures-box-projected-reflections/mip1_hu_8b55cb38d7654014.png 1024w"
+loading="lazy"
+alt="mip1"
+class="gallery-image"
+data-flex-grow="168"
+data-flex-basis="404px"
+&gt;&lt;/td&gt;
+&lt;td&gt;&lt;img src="https://frostbone25.github.io/p/adventures-box-projected-reflections/mip2.png"
+width="1117"
+height="662"
+srcset="https://frostbone25.github.io/p/adventures-box-projected-reflections/mip2_hu_55e9319764df5373.png 480w, https://frostbone25.github.io/p/adventures-box-projected-reflections/mip2_hu_f615e02f13e1cfc4.png 1024w"
+loading="lazy"
+alt="mip2"
+class="gallery-image"
+data-flex-grow="168"
+data-flex-basis="404px"
+&gt;&lt;/td&gt;
+&lt;td&gt;&lt;img src="https://frostbone25.github.io/p/adventures-box-projected-reflections/mip3.png"
+width="1117"
+height="662"
+srcset="https://frostbone25.github.io/p/adventures-box-projected-reflections/mip3_hu_4403839c5604aab7.png 480w, https://frostbone25.github.io/p/adventures-box-projected-reflections/mip3_hu_70504502bb844b2.png 1024w"
+loading="lazy"
+alt="mip3"
+class="gallery-image"
+data-flex-grow="168"
+data-flex-basis="404px"
+&gt;&lt;/td&gt;
+&lt;td&gt;&lt;img src="https://frostbone25.github.io/p/adventures-box-projected-reflections/mip4.png"
+width="1117"
+height="662"
+srcset="https://frostbone25.github.io/p/adventures-box-projected-reflections/mip4_hu_f4522cc6e37bd5d5.png 480w, https://frostbone25.github.io/p/adventures-box-projected-reflections/mip4_hu_3000845969f20e7e.png 1024w"
+loading="lazy"
+alt="mip4"
+class="gallery-image"
+data-flex-grow="168"
+data-flex-basis="404px"
+&gt;&lt;/td&gt;
+&lt;td&gt;&lt;img src="https://frostbone25.github.io/p/adventures-box-projected-reflections/mip5.png"
+width="1117"
+height="662"
+srcset="https://frostbone25.github.io/p/adventures-box-projected-reflections/mip5_hu_c92f0abc7a551537.png 480w, https://frostbone25.github.io/p/adventures-box-projected-reflections/mip5_hu_5fd68fa0a5912391.png 1024w"
+loading="lazy"
+alt="mip5"
+class="gallery-image"
+data-flex-grow="168"
+data-flex-basis="404px"
+&gt;&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+&lt;p&gt;This then can be fed to objects within an Axis-Aligned Bounding Box (AABB) Volume inside a scene to sample environment reflections.&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="1-classic-cubemapA.png" width="49%" /&gt;
+&lt;img src="1-classic-cubemapB.png" width="49%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Left: No Normal Mapping | Right: Normal Mapped&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;However, as Physically Based Rendering and Shading became standard, reflections are a huge part of how an object is shaded now. Sampling this cubemap for environment reflections as-is is not convincing enough in most cases.&lt;/p&gt;
+&lt;p&gt;These reflection probes are usually authored to be placed using an Axis-Aligned Bounding Box Volume (AABB), to tell objects within the volume to use a specific reflection cubemap.&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://frostbone25.github.io/p/adventures-box-projected-reflections/2-box-projectedC.png"
+width="1117"
+height="662"
+srcset="https://frostbone25.github.io/p/adventures-box-projected-reflections/2-box-projectedC_hu_63a676c11327de16.png 480w, https://frostbone25.github.io/p/adventures-box-projected-reflections/2-box-projectedC_hu_1b5b51847d5e4cb4.png 1024w"
+loading="lazy"
+alt="2-box-projectedC"
+class="gallery-image"
+data-flex-grow="168"
+data-flex-basis="404px"
+&gt;&lt;/p&gt;
+&lt;p&gt;Now fortunately the industry devised a clever way to improve upon the quality of these reflections by projecting the reflection vector onto a box-shape. The box shape in question is the very same AABB volume used to define the reflection volume in the first place, this is parallax-corrected cubemaps.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt; 1
+&lt;/span&gt;&lt;span class="lnt"&gt; 2
+&lt;/span&gt;&lt;span class="lnt"&gt; 3
+&lt;/span&gt;&lt;span class="lnt"&gt; 4
+&lt;/span&gt;&lt;span class="lnt"&gt; 5
+&lt;/span&gt;&lt;span class="lnt"&gt; 6
+&lt;/span&gt;&lt;span class="lnt"&gt; 7
+&lt;/span&gt;&lt;span class="lnt"&gt; 8
+&lt;/span&gt;&lt;span class="lnt"&gt; 9
+&lt;/span&gt;&lt;span class="lnt"&gt;10
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-HLSL" data-lang="HLSL"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//compute reflection vector&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;vector_reflectionDirection&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;reflect&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;vector_viewDirection&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;vector_normalDirection&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//project reflection vector onto box&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="n"&gt;vector_reflectionDirection&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;BoxProjectedCubemapDirection&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;vector_reflectionDirection&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="c1"&gt;//the original reflection vector to project&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;vector_worldPosition&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="c1"&gt;//world position&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;vector_reflectionProbePosition&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="c1"&gt;//the reflection probe position&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;vector_reflectionProbeBoxMin&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="c1"&gt;//reflection probe AABB min&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;vector_reflectionProbeBoxMax&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt; &lt;span class="c1"&gt;//reflection probe AABB max&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p float="left"&gt;
+&lt;img src="2-box-projectedA.png" width="49%" /&gt;
+&lt;img src="2-box-projectedB.png" width="49%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Left: Box Projected + No Normal Mapping | Right: Box Projected + Normal Mapped&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;However, there is an issue with this approach&amp;hellip;&lt;/p&gt;
+&lt;p&gt;When sampling the reflection, we choose the mip level based on surface roughness. Meaning that the reflection has a consistent mip level &lt;em&gt;(or sharpness)&lt;/em&gt; wherever it is being sampled from within the volume.&lt;/p&gt;
+&lt;p&gt;This assumption works fine for non-parallax corrected cubemaps &lt;em&gt;(because the volume is essentially infinitely large)&lt;/em&gt;, but factoring in parallax correction where we have a finite-sized volume this assumption starts to fall apart.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt;1
+&lt;/span&gt;&lt;span class="lnt"&gt;2
+&lt;/span&gt;&lt;span class="lnt"&gt;3
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-HLSL" data-lang="HLSL"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;perceptualRoughness&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mf"&gt;1.0&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;_Smoothness&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;mip&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;perceptualRoughness&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;MAX_REFLECTION_PROBE_MIP_LEVEL&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="c1"&gt;//&amp;lt;--- this is not enough anymore!&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;&lt;img src="https://frostbone25.github.io/p/adventures-box-projected-reflections/real-world-contact-hardening.jpg"
+width="1280"
+height="1280"
+srcset="https://frostbone25.github.io/p/adventures-box-projected-reflections/real-world-contact-hardening_hu_f932e22052a4c7af.jpg 480w, https://frostbone25.github.io/p/adventures-box-projected-reflections/real-world-contact-hardening_hu_fbd570d38f92a4d9.jpg 1024w"
+loading="lazy"
+alt="real-world-contact-hardening"
+class="gallery-image"
+data-flex-grow="100"
+data-flex-basis="240px"
+&gt;&lt;/p&gt;
+&lt;p&gt;When we look at the real world, we notice that when reflections are closer to the source they remain relatively sharp. The further it goes the blurrier/rougher it gets. This phenomena is not accounted for when sampling our own reflection probes.&lt;/p&gt;
+&lt;p&gt;So when sampling the reflection cubemap, the mip level should vary not just based on surface roughness, but also depending on how close we are to the source.&lt;/p&gt;
+&lt;h2 id="contact-hardening"&gt;&lt;a href="#contact-hardening" class="header-anchor"&gt;&lt;/a&gt;Contact Hardening
+&lt;/h2&gt;&lt;h4 id="contact-hardening-none"&gt;&lt;a href="#contact-hardening-none" class="header-anchor"&gt;&lt;/a&gt;Contact Hardening: None
+&lt;/h4&gt;&lt;p&gt;&lt;img src="https://frostbone25.github.io/p/adventures-box-projected-reflections/2-box-projectedA.png"
+width="1117"
+height="662"
+srcset="https://frostbone25.github.io/p/adventures-box-projected-reflections/2-box-projectedA_hu_a3053128fa8fa403.png 480w, https://frostbone25.github.io/p/adventures-box-projected-reflections/2-box-projectedA_hu_4a02811062732156.png 1024w"
+loading="lazy"
+alt="2-box-projectedA"
+class="gallery-image"
+data-flex-grow="168"
+data-flex-basis="404px"
+&gt;&lt;/p&gt;
+&lt;h4 id="code"&gt;&lt;a href="#code" class="header-anchor"&gt;&lt;/a&gt;Code
+&lt;/h4&gt;&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt; 1
+&lt;/span&gt;&lt;span class="lnt"&gt; 2
+&lt;/span&gt;&lt;span class="lnt"&gt; 3
+&lt;/span&gt;&lt;span class="lnt"&gt; 4
+&lt;/span&gt;&lt;span class="lnt"&gt; 5
+&lt;/span&gt;&lt;span class="lnt"&gt; 6
+&lt;/span&gt;&lt;span class="lnt"&gt; 7
+&lt;/span&gt;&lt;span class="lnt"&gt; 8
+&lt;/span&gt;&lt;span class="lnt"&gt; 9
+&lt;/span&gt;&lt;span class="lnt"&gt;10
+&lt;/span&gt;&lt;span class="lnt"&gt;11
+&lt;/span&gt;&lt;span class="lnt"&gt;12
+&lt;/span&gt;&lt;span class="lnt"&gt;13
+&lt;/span&gt;&lt;span class="lnt"&gt;14
+&lt;/span&gt;&lt;span class="lnt"&gt;15
+&lt;/span&gt;&lt;span class="lnt"&gt;16
+&lt;/span&gt;&lt;span class="lnt"&gt;17
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-HLSL" data-lang="HLSL"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//Unity&amp;#39;s Default Box Projection function&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="k"&gt;inline&lt;/span&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;UnityBoxProjectedCubemapDirectionDefault&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;worldRefl&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;worldPos&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;float4&lt;/span&gt; &lt;span class="n"&gt;cubemapCenter&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;float4&lt;/span&gt; &lt;span class="n"&gt;boxMin&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;float4&lt;/span&gt; &lt;span class="n"&gt;boxMax&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="p"&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;nrdir&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;normalize&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;worldRefl&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;rbmax&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;boxMax&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xyz&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;worldPos&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt; &lt;span class="n"&gt;nrdir&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;rbmin&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;boxMin&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xyz&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;worldPos&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt; &lt;span class="n"&gt;nrdir&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;rbminmax&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;nrdir&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="mf"&gt;0.0f&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;?&lt;/span&gt; &lt;span class="n"&gt;rbmax&lt;/span&gt; &lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;rbmin&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;dist&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;min&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;min&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;rbminmax&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;x&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;rbminmax&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;y&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt; &lt;span class="n"&gt;rbminmax&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;z&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;worldPos&lt;/span&gt; &lt;span class="o"&gt;-=&lt;/span&gt; &lt;span class="n"&gt;cubemapCenter&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xyz&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;worldRefl&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;worldPos&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;nrdir&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;dist&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;worldRefl&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt; 1
+&lt;/span&gt;&lt;span class="lnt"&gt; 2
+&lt;/span&gt;&lt;span class="lnt"&gt; 3
+&lt;/span&gt;&lt;span class="lnt"&gt; 4
+&lt;/span&gt;&lt;span class="lnt"&gt; 5
+&lt;/span&gt;&lt;span class="lnt"&gt; 6
+&lt;/span&gt;&lt;span class="lnt"&gt; 7
+&lt;/span&gt;&lt;span class="lnt"&gt; 8
+&lt;/span&gt;&lt;span class="lnt"&gt; 9
+&lt;/span&gt;&lt;span class="lnt"&gt;10
+&lt;/span&gt;&lt;span class="lnt"&gt;11
+&lt;/span&gt;&lt;span class="lnt"&gt;12
+&lt;/span&gt;&lt;span class="lnt"&gt;13
+&lt;/span&gt;&lt;span class="lnt"&gt;14
+&lt;/span&gt;&lt;span class="lnt"&gt;15
+&lt;/span&gt;&lt;span class="lnt"&gt;16
+&lt;/span&gt;&lt;span class="lnt"&gt;17
+&lt;/span&gt;&lt;span class="lnt"&gt;18
+&lt;/span&gt;&lt;span class="lnt"&gt;19
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-HLSL" data-lang="HLSL"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//in object fragment shader...&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//compute reflection vector&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;vector_reflectionDirection&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;reflect&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;vector_viewDirection&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;vector_normalDirection&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//if box projection is enabled, modify our vector to project reflections onto a world space box (defined by the reflection probe)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="n"&gt;vector_reflectionDirection&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;UnityBoxProjectedCubemapDirectionDefault&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;vector_reflectionDirection&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;vector_worldPosition&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;unity_SpecCube0_ProbePosition&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;unity_SpecCube0_BoxMin&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;unity_SpecCube0_BoxMax&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//remap our smoothness parameter to PBR roughness&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;perceptualRoughness&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mf"&gt;1.0&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;_Smoothness&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;roughness&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;perceptualRoughness&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;perceptualRoughness&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//compute the cubemap mip level based on perceptual roughness&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//NOTE: in unity this is perceptualRoughness * UNITY_SPECCUBE_LOD_STEPS&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;mip&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;UnityPerceptualRoughnessToMipmapLevel&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;perceptualRoughness&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//sample the environment reflection&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="n"&gt;enviormentReflection&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;UNITY_SAMPLE_TEXCUBE_LOD&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;unity_SpecCube0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;vector_reflectionDirection&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xyz&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;mip&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="n"&gt;enviormentReflection&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;rgb&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;DecodeHDR&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;enviormentReflection&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;unity_SpecCube0_HDR&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;This is the usual way to sample box-projected cubemap reflections. The issue as I described though is that the roughness of the reflection is consistent across the entire volume regardless of camera position, and object position. This is not the case when you compare it to the the real world, or a proper raytraced/ground truth result.&lt;/p&gt;
+&lt;p&gt;With that there are a few implementations I explored that attempt to alleviate that problem and make them more true to life and higher fidelity.&lt;/p&gt;
+&lt;h4 id="contact-hardening-approximated"&gt;&lt;a href="#contact-hardening-approximated" class="header-anchor"&gt;&lt;/a&gt;Contact Hardening: Approximated
+&lt;/h4&gt;&lt;p&gt;&lt;img src="https://frostbone25.github.io/p/adventures-box-projected-reflections/3-box-projectedApproxA.png"
+width="1117"
+height="662"
+srcset="https://frostbone25.github.io/p/adventures-box-projected-reflections/3-box-projectedApproxA_hu_ff021dc54bcc282e.png 480w, https://frostbone25.github.io/p/adventures-box-projected-reflections/3-box-projectedApproxA_hu_b1ccfc1aaee68eec.png 1024w"
+loading="lazy"
+alt="3-box-projectedApproxA"
+class="gallery-image"
+data-flex-grow="168"
+data-flex-basis="404px"
+&gt;&lt;/p&gt;
+&lt;h4 id="code-1"&gt;&lt;a href="#code-1" class="header-anchor"&gt;&lt;/a&gt;Code
+&lt;/h4&gt;&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt; 1
+&lt;/span&gt;&lt;span class="lnt"&gt; 2
+&lt;/span&gt;&lt;span class="lnt"&gt; 3
+&lt;/span&gt;&lt;span class="lnt"&gt; 4
+&lt;/span&gt;&lt;span class="lnt"&gt; 5
+&lt;/span&gt;&lt;span class="lnt"&gt; 6
+&lt;/span&gt;&lt;span class="lnt"&gt; 7
+&lt;/span&gt;&lt;span class="lnt"&gt; 8
+&lt;/span&gt;&lt;span class="lnt"&gt; 9
+&lt;/span&gt;&lt;span class="lnt"&gt;10
+&lt;/span&gt;&lt;span class="lnt"&gt;11
+&lt;/span&gt;&lt;span class="lnt"&gt;12
+&lt;/span&gt;&lt;span class="lnt"&gt;13
+&lt;/span&gt;&lt;span class="lnt"&gt;14
+&lt;/span&gt;&lt;span class="lnt"&gt;15
+&lt;/span&gt;&lt;span class="lnt"&gt;16
+&lt;/span&gt;&lt;span class="lnt"&gt;17
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-HLSL" data-lang="HLSL"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//Unity&amp;#39;s Default Box Projection function, tweaked to output hit distance&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="k"&gt;inline&lt;/span&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;UnityBoxProjectedCubemapDirectionDefault&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;worldRefl&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;worldPos&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;float4&lt;/span&gt; &lt;span class="n"&gt;cubemapCenter&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;float4&lt;/span&gt; &lt;span class="n"&gt;boxMin&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;float4&lt;/span&gt; &lt;span class="n"&gt;boxMax&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="k"&gt;out&lt;/span&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;distanceToHitPoint&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="p"&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;nrdir&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;normalize&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;worldRefl&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;rbmax&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;boxMax&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xyz&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;worldPos&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt; &lt;span class="n"&gt;nrdir&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;rbmin&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;boxMin&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xyz&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;worldPos&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt; &lt;span class="n"&gt;nrdir&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;rbminmax&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;nrdir&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="mf"&gt;0.0f&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;?&lt;/span&gt; &lt;span class="n"&gt;rbmax&lt;/span&gt; &lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;rbmin&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;distanceToHitPoint&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;min&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;min&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;rbminmax&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;x&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;rbminmax&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;y&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt; &lt;span class="n"&gt;rbminmax&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;z&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;worldPos&lt;/span&gt; &lt;span class="o"&gt;-=&lt;/span&gt; &lt;span class="n"&gt;cubemapCenter&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xyz&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;worldRefl&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;worldPos&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;nrdir&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;distanceToHitPoint&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;worldRefl&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt; 1
+&lt;/span&gt;&lt;span class="lnt"&gt; 2
+&lt;/span&gt;&lt;span class="lnt"&gt; 3
+&lt;/span&gt;&lt;span class="lnt"&gt; 4
+&lt;/span&gt;&lt;span class="lnt"&gt; 5
+&lt;/span&gt;&lt;span class="lnt"&gt; 6
+&lt;/span&gt;&lt;span class="lnt"&gt; 7
+&lt;/span&gt;&lt;span class="lnt"&gt; 8
+&lt;/span&gt;&lt;span class="lnt"&gt; 9
+&lt;/span&gt;&lt;span class="lnt"&gt;10
+&lt;/span&gt;&lt;span class="lnt"&gt;11
+&lt;/span&gt;&lt;span class="lnt"&gt;12
+&lt;/span&gt;&lt;span class="lnt"&gt;13
+&lt;/span&gt;&lt;span class="lnt"&gt;14
+&lt;/span&gt;&lt;span class="lnt"&gt;15
+&lt;/span&gt;&lt;span class="lnt"&gt;16
+&lt;/span&gt;&lt;span class="lnt"&gt;17
+&lt;/span&gt;&lt;span class="lnt"&gt;18
+&lt;/span&gt;&lt;span class="lnt"&gt;19
+&lt;/span&gt;&lt;span class="lnt"&gt;20
+&lt;/span&gt;&lt;span class="lnt"&gt;21
+&lt;/span&gt;&lt;span class="lnt"&gt;22
+&lt;/span&gt;&lt;span class="lnt"&gt;23
+&lt;/span&gt;&lt;span class="lnt"&gt;24
+&lt;/span&gt;&lt;span class="lnt"&gt;25
+&lt;/span&gt;&lt;span class="lnt"&gt;26
+&lt;/span&gt;&lt;span class="lnt"&gt;27
+&lt;/span&gt;&lt;span class="lnt"&gt;28
+&lt;/span&gt;&lt;span class="lnt"&gt;29
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-HLSL" data-lang="HLSL"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//in object fragment shader...&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//compute reflection vector&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;vector_reflectionDirection&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;reflect&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;vector_viewDirection&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;vector_normalDirection&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//remap our smoothness parameter to PBR roughness&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;perceptualRoughness&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mf"&gt;1.0&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;_Smoothness&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;roughness&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;perceptualRoughness&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;perceptualRoughness&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="c1"&gt;//offical roughness term for pbr shading&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//compute the cubemap mip level based on perceptual roughness&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//NOTE: this is basically perceptualRoughness * UNITY_SPECCUBE_LOD_STEPS&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;mipOriginal&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;UnityPerceptualRoughnessToMipmapLevel&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;perceptualRoughness&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//this will store the &amp;#34;intersectionDistance&amp;#34; result from the box projection&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;intersectionDistance&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mo"&gt;0&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//if box projection is enabled, modify our vector to project reflections onto a world space box (defined by the reflection probe)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="n"&gt;vector_reflectionDirection&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;UnityBoxProjectedCubemapDirectionDefault&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;vector_reflectionDirection&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;vector_worldPosition&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;unity_SpecCube0_ProbePosition&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;unity_SpecCube0_BoxMin&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;unity_SpecCube0_BoxMax&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;intersectionDistance&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//added a clamp to the mip offset, helps to make sure that when a fragment is far away the mip level doesn&amp;#39;t climb to a high value and look wierd&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//this tends to look much better when clamped&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="n"&gt;intersectionDistance&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;clamp&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;intersectionDistance&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mf"&gt;0.0f&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;UNITY_SPECCUBE_LOD_STEPS&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//compute new mip level based on the intersectionDistance value (this is mostly arbitrary)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;mip&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;lerp&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mf"&gt;0.0f&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;mipOriginal&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;intersectionDistance&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt; &lt;span class="n"&gt;UNITY_SPECCUBE_LOD_STEPS&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//sample the provided reflection probe at the given mip level&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="n"&gt;enviormentReflection&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;UNITY_SAMPLE_TEXCUBE_LOD&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;unity_SpecCube0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;vector_reflectionDirection&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xyz&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;mip&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="n"&gt;enviormentReflection&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;rgb&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;DecodeHDR&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;enviormentReflection&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;unity_SpecCube0_HDR&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;This is achieved by modifying the existing box projection method to output a hit distance from the bounds of the box, to where the current fragment/pixel is.&lt;/p&gt;
+&lt;p&gt;This hit distance is then used to offset the mip level when sampling the cubemap to be sharper when closer to the bounds of the probe, and rougher when farther from the bounds. It&amp;rsquo;s very cheap and fast, though not accurate as it fails to model anisotropic reflections &lt;em&gt;(Isotropic, or specular elongation)&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;Despite that, this alleviates a couple of visual problems we saw before.&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;This attempts to solve the problem of reflections being too consistent across the entire volume, making them look closer to a proper raytraced result. &lt;em&gt;(I.e the closer to the actual source of the reflection bounds, the sharper the reflection gets)&lt;/em&gt;&lt;/li&gt;
+&lt;li&gt;In most situations this contact hardening actually contributes to improved specular occlusion. Since the contact hardening reflections reveal the underlying cubemap more, there is less of a glowing appearance in the corners of the bounds. &lt;em&gt;(NOTE: This is assuming your reflection probe is placed and configured well to approximate the geometry of the space/room, if it&amp;rsquo;s not this might also contribute to light leaking)&lt;/em&gt;&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;This is a marginal improvement over the classic method, and it&amp;rsquo;s really cheap!&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;NOTE:&lt;/strong&gt; &lt;em&gt;The approximation is mostly arbitrarily tweaked by hand with random values until it looks right, or otherwise known as &amp;ldquo;banging random rocks together until we get something decent&amp;rdquo;. In addition, any possible tricks to help with mimicking anisotropic reflections would help here.&lt;/em&gt;&lt;/p&gt;
+&lt;h4 id="contact-hardening-hdrp-approximation--frostbite-engine"&gt;&lt;a href="#contact-hardening-hdrp-approximation--frostbite-engine" class="header-anchor"&gt;&lt;/a&gt;Contact Hardening: HDRP Approximation / Frostbite Engine
+&lt;/h4&gt;&lt;p&gt;&lt;img src="https://frostbone25.github.io/p/adventures-box-projected-reflections/4-box-projectedHDRPA.png"
+width="1117"
+height="662"
+srcset="https://frostbone25.github.io/p/adventures-box-projected-reflections/4-box-projectedHDRPA_hu_65b187b16d38035e.png 480w, https://frostbone25.github.io/p/adventures-box-projected-reflections/4-box-projectedHDRPA_hu_9cc5db9f7be1f457.png 1024w"
+loading="lazy"
+alt="4-box-projectedHDRPA"
+class="gallery-image"
+data-flex-grow="168"
+data-flex-basis="404px"
+&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt; 1
+&lt;/span&gt;&lt;span class="lnt"&gt; 2
+&lt;/span&gt;&lt;span class="lnt"&gt; 3
+&lt;/span&gt;&lt;span class="lnt"&gt; 4
+&lt;/span&gt;&lt;span class="lnt"&gt; 5
+&lt;/span&gt;&lt;span class="lnt"&gt; 6
+&lt;/span&gt;&lt;span class="lnt"&gt; 7
+&lt;/span&gt;&lt;span class="lnt"&gt; 8
+&lt;/span&gt;&lt;span class="lnt"&gt; 9
+&lt;/span&gt;&lt;span class="lnt"&gt;10
+&lt;/span&gt;&lt;span class="lnt"&gt;11
+&lt;/span&gt;&lt;span class="lnt"&gt;12
+&lt;/span&gt;&lt;span class="lnt"&gt;13
+&lt;/span&gt;&lt;span class="lnt"&gt;14
+&lt;/span&gt;&lt;span class="lnt"&gt;15
+&lt;/span&gt;&lt;span class="lnt"&gt;16
+&lt;/span&gt;&lt;span class="lnt"&gt;17
+&lt;/span&gt;&lt;span class="lnt"&gt;18
+&lt;/span&gt;&lt;span class="lnt"&gt;19
+&lt;/span&gt;&lt;span class="lnt"&gt;20
+&lt;/span&gt;&lt;span class="lnt"&gt;21
+&lt;/span&gt;&lt;span class="lnt"&gt;22
+&lt;/span&gt;&lt;span class="lnt"&gt;23
+&lt;/span&gt;&lt;span class="lnt"&gt;24
+&lt;/span&gt;&lt;span class="lnt"&gt;25
+&lt;/span&gt;&lt;span class="lnt"&gt;26
+&lt;/span&gt;&lt;span class="lnt"&gt;27
+&lt;/span&gt;&lt;span class="lnt"&gt;28
+&lt;/span&gt;&lt;span class="lnt"&gt;29
+&lt;/span&gt;&lt;span class="lnt"&gt;30
+&lt;/span&gt;&lt;span class="lnt"&gt;31
+&lt;/span&gt;&lt;span class="lnt"&gt;32
+&lt;/span&gt;&lt;span class="lnt"&gt;33
+&lt;/span&gt;&lt;span class="lnt"&gt;34
+&lt;/span&gt;&lt;span class="lnt"&gt;35
+&lt;/span&gt;&lt;span class="lnt"&gt;36
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-HLSL" data-lang="HLSL"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//From Moving Frostbite to PBR document&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//This function fakes the roughness based integration of reflection probes by adjusting the roughness value&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//NOTE: Untouched from HDRP&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;ComputeDistanceBaseRoughness&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;distanceIntersectionToShadedPoint&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;distanceIntersectionToProbeCenter&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;perceptualRoughness&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="p"&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;newPerceptualRoughness&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;clamp&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;distanceIntersectionToShadedPoint&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt; &lt;span class="n"&gt;distanceIntersectionToProbeCenter&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;perceptualRoughness&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mo"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;perceptualRoughness&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="nb"&gt;lerp&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;newPerceptualRoughness&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;perceptualRoughness&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;perceptualRoughness&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//This simplified version assume that we care about the result only when we are inside the box&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//NOTE: Untouched from HDRP&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;IntersectRayAABBSimple&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;start&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;dir&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;boxMin&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;boxMax&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="p"&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;invDir&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;rcp&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;dir&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="c1"&gt;// Find the ray intersection with box plane&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;rbmin&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;boxMin&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;start&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;invDir&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;rbmax&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;boxMax&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;start&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;invDir&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;rbminmax&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kt"&gt;float3&lt;/span&gt;&lt;span class="p"&gt;((&lt;/span&gt;&lt;span class="n"&gt;dir&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;x&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="mf"&gt;0.0&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;?&lt;/span&gt; &lt;span class="n"&gt;rbmax&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;x&lt;/span&gt; &lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;rbmin&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;x&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;dir&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;y&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="mf"&gt;0.0&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;?&lt;/span&gt; &lt;span class="n"&gt;rbmax&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;y&lt;/span&gt; &lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;rbmin&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;y&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;dir&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;z&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="mf"&gt;0.0&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;?&lt;/span&gt; &lt;span class="n"&gt;rbmax&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;z&lt;/span&gt; &lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;rbmin&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;z&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="nb"&gt;min&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;min&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;rbminmax&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;x&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;rbminmax&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;y&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt; &lt;span class="n"&gt;rbminmax&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;z&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//return projectionDistance, can be used in ComputeDistanceBaseRoughness formula&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//return in R the unormalized corrected direction which is used to fetch cubemap but also its length represent the distance of the capture point to the intersection&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//Length R can be reuse as a parameter of ComputeDistanceBaseRoughness for distIntersectionToProbeCenter&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//NOTE: Modified to be much simpler, and to work with the Built-In Render Pipeline (BIRP)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;EvaluateLight_EnvIntersection&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;worldSpacePosition&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="k"&gt;inout&lt;/span&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;R&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="p"&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;projectionDistance&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;IntersectRayAABBSimple&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;worldSpacePosition&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;R&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;unity_SpecCube0_BoxMin&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xyz&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;unity_SpecCube0_BoxMax&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xyz&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;R&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;worldSpacePosition&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;projectionDistance&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;R&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;unity_SpecCube0_ProbePosition&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xyz&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;projectionDistance&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt; 1
+&lt;/span&gt;&lt;span class="lnt"&gt; 2
+&lt;/span&gt;&lt;span class="lnt"&gt; 3
+&lt;/span&gt;&lt;span class="lnt"&gt; 4
+&lt;/span&gt;&lt;span class="lnt"&gt; 5
+&lt;/span&gt;&lt;span class="lnt"&gt; 6
+&lt;/span&gt;&lt;span class="lnt"&gt; 7
+&lt;/span&gt;&lt;span class="lnt"&gt; 8
+&lt;/span&gt;&lt;span class="lnt"&gt; 9
+&lt;/span&gt;&lt;span class="lnt"&gt;10
+&lt;/span&gt;&lt;span class="lnt"&gt;11
+&lt;/span&gt;&lt;span class="lnt"&gt;12
+&lt;/span&gt;&lt;span class="lnt"&gt;13
+&lt;/span&gt;&lt;span class="lnt"&gt;14
+&lt;/span&gt;&lt;span class="lnt"&gt;15
+&lt;/span&gt;&lt;span class="lnt"&gt;16
+&lt;/span&gt;&lt;span class="lnt"&gt;17
+&lt;/span&gt;&lt;span class="lnt"&gt;18
+&lt;/span&gt;&lt;span class="lnt"&gt;19
+&lt;/span&gt;&lt;span class="lnt"&gt;20
+&lt;/span&gt;&lt;span class="lnt"&gt;21
+&lt;/span&gt;&lt;span class="lnt"&gt;22
+&lt;/span&gt;&lt;span class="lnt"&gt;23
+&lt;/span&gt;&lt;span class="lnt"&gt;24
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-HLSL" data-lang="HLSL"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//in object fragment shader...&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//compute reflection vector&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;vector_reflectionDirection&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;reflect&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;vector_viewDirection&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;vector_normalDirection&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;perceptualRoughness&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mf"&gt;1.0&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;_Smoothness&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//use HDRP method to compute the intersection distance (and also box project vector_reflectionDirection)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;projectionDistance&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;EvaluateLight_EnvIntersection&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;vector_worldPosition&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;vector_reflectionDirection&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//use HDRP formula to calculate roughness based on distance&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;distanceBasedRoughness&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;ComputeDistanceBaseRoughness&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;projectionDistance&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="nb"&gt;length&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;vector_reflectionDirection&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt; &lt;span class="n"&gt;perceptualRoughness&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//the output of distanceBasedRoughness is the new perceptual roughness&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="n"&gt;perceptualRoughness&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;distanceBasedRoughness&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;roughness&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;perceptualRoughness&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;perceptualRoughness&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//compute the cubemap mip level based on perceptual roughness&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;mip&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;UnityPerceptualRoughnessToMipmapLevel&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;distanceBasedRoughness&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//sample the provided reflection probe at the given mip level&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="n"&gt;enviormentReflection&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;UNITY_SAMPLE_TEXCUBE_LOD&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;unity_SpecCube0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;vector_reflectionDirection&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xyz&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;mip&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="n"&gt;enviormentReflection&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;rgb&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;DecodeHDR&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;enviormentReflection&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;unity_SpecCube0_HDR&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;This I found about recently, where &lt;a class="link" href="https://docs.unity.cn/Packages/com.unity.render-pipelines.high-definition@13.1/manual/whats-new-10.html" target="_blank" rel="noopener"
+&gt;Unity HDRP&lt;/a&gt; had a very similar implementation to the original approximation I stumbled upon. &lt;em&gt;(The implmentation also stems from improvements made to the Frostbite engine)&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;The difference being that the approximation used here is less obvious/extreme than the other original approximation I had, and it tries to stay somewhat physically plausible.&lt;/p&gt;
+&lt;p&gt;Comparing it to ground truth it is closer in some cases than the other, for a very similar cost. A big improvement over the classic method, and it&amp;rsquo;s really cheap!&lt;/p&gt;
+&lt;h4 id="contact-hardening-godot-approximation"&gt;&lt;a href="#contact-hardening-godot-approximation" class="header-anchor"&gt;&lt;/a&gt;Contact Hardening: Godot Approximation
+&lt;/h4&gt;&lt;p&gt;&lt;img src="https://frostbone25.github.io/p/adventures-box-projected-reflections/5-box-projectedGodotA.png"
+width="1117"
+height="662"
+srcset="https://frostbone25.github.io/p/adventures-box-projected-reflections/5-box-projectedGodotA_hu_b3d6edd022587737.png 480w, https://frostbone25.github.io/p/adventures-box-projected-reflections/5-box-projectedGodotA_hu_83d7fb67a470795.png 1024w"
+loading="lazy"
+alt="5-box-projectedGodotA"
+class="gallery-image"
+data-flex-grow="168"
+data-flex-basis="404px"
+&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt; 1
+&lt;/span&gt;&lt;span class="lnt"&gt; 2
+&lt;/span&gt;&lt;span class="lnt"&gt; 3
+&lt;/span&gt;&lt;span class="lnt"&gt; 4
+&lt;/span&gt;&lt;span class="lnt"&gt; 5
+&lt;/span&gt;&lt;span class="lnt"&gt; 6
+&lt;/span&gt;&lt;span class="lnt"&gt; 7
+&lt;/span&gt;&lt;span class="lnt"&gt; 8
+&lt;/span&gt;&lt;span class="lnt"&gt; 9
+&lt;/span&gt;&lt;span class="lnt"&gt;10
+&lt;/span&gt;&lt;span class="lnt"&gt;11
+&lt;/span&gt;&lt;span class="lnt"&gt;12
+&lt;/span&gt;&lt;span class="lnt"&gt;13
+&lt;/span&gt;&lt;span class="lnt"&gt;14
+&lt;/span&gt;&lt;span class="lnt"&gt;15
+&lt;/span&gt;&lt;span class="lnt"&gt;16
+&lt;/span&gt;&lt;span class="lnt"&gt;17
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-HLSL" data-lang="HLSL"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//Unity&amp;#39;s Default Box Projection function, tweaked to output hit distance&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="k"&gt;inline&lt;/span&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;UnityBoxProjectedCubemapDirectionDefault&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;worldRefl&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;worldPos&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;float4&lt;/span&gt; &lt;span class="n"&gt;cubemapCenter&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;float4&lt;/span&gt; &lt;span class="n"&gt;boxMin&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;float4&lt;/span&gt; &lt;span class="n"&gt;boxMax&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="k"&gt;out&lt;/span&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;distanceToHitPoint&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="p"&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;nrdir&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;normalize&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;worldRefl&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;rbmax&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;boxMax&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xyz&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;worldPos&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt; &lt;span class="n"&gt;nrdir&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;rbmin&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;boxMin&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xyz&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;worldPos&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt; &lt;span class="n"&gt;nrdir&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;rbminmax&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;nrdir&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="mf"&gt;0.0f&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;?&lt;/span&gt; &lt;span class="n"&gt;rbmax&lt;/span&gt; &lt;span class="o"&gt;:&lt;/span&gt; &lt;span class="n"&gt;rbmin&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;distanceToHitPoint&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;min&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;min&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;rbminmax&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;x&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;rbminmax&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;y&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt; &lt;span class="n"&gt;rbminmax&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;z&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;worldPos&lt;/span&gt; &lt;span class="o"&gt;-=&lt;/span&gt; &lt;span class="n"&gt;cubemapCenter&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xyz&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;worldRefl&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;worldPos&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;nrdir&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;distanceToHitPoint&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;worldRefl&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt; 1
+&lt;/span&gt;&lt;span class="lnt"&gt; 2
+&lt;/span&gt;&lt;span class="lnt"&gt; 3
+&lt;/span&gt;&lt;span class="lnt"&gt; 4
+&lt;/span&gt;&lt;span class="lnt"&gt; 5
+&lt;/span&gt;&lt;span class="lnt"&gt; 6
+&lt;/span&gt;&lt;span class="lnt"&gt; 7
+&lt;/span&gt;&lt;span class="lnt"&gt; 8
+&lt;/span&gt;&lt;span class="lnt"&gt; 9
+&lt;/span&gt;&lt;span class="lnt"&gt;10
+&lt;/span&gt;&lt;span class="lnt"&gt;11
+&lt;/span&gt;&lt;span class="lnt"&gt;12
+&lt;/span&gt;&lt;span class="lnt"&gt;13
+&lt;/span&gt;&lt;span class="lnt"&gt;14
+&lt;/span&gt;&lt;span class="lnt"&gt;15
+&lt;/span&gt;&lt;span class="lnt"&gt;16
+&lt;/span&gt;&lt;span class="lnt"&gt;17
+&lt;/span&gt;&lt;span class="lnt"&gt;18
+&lt;/span&gt;&lt;span class="lnt"&gt;19
+&lt;/span&gt;&lt;span class="lnt"&gt;20
+&lt;/span&gt;&lt;span class="lnt"&gt;21
+&lt;/span&gt;&lt;span class="lnt"&gt;22
+&lt;/span&gt;&lt;span class="lnt"&gt;23
+&lt;/span&gt;&lt;span class="lnt"&gt;24
+&lt;/span&gt;&lt;span class="lnt"&gt;25
+&lt;/span&gt;&lt;span class="lnt"&gt;26
+&lt;/span&gt;&lt;span class="lnt"&gt;27
+&lt;/span&gt;&lt;span class="lnt"&gt;28
+&lt;/span&gt;&lt;span class="lnt"&gt;29
+&lt;/span&gt;&lt;span class="lnt"&gt;30
+&lt;/span&gt;&lt;span class="lnt"&gt;31
+&lt;/span&gt;&lt;span class="lnt"&gt;32
+&lt;/span&gt;&lt;span class="lnt"&gt;33
+&lt;/span&gt;&lt;span class="lnt"&gt;34
+&lt;/span&gt;&lt;span class="lnt"&gt;35
+&lt;/span&gt;&lt;span class="lnt"&gt;36
+&lt;/span&gt;&lt;span class="lnt"&gt;37
+&lt;/span&gt;&lt;span class="lnt"&gt;38
+&lt;/span&gt;&lt;span class="lnt"&gt;39
+&lt;/span&gt;&lt;span class="lnt"&gt;40
+&lt;/span&gt;&lt;span class="lnt"&gt;41
+&lt;/span&gt;&lt;span class="lnt"&gt;42
+&lt;/span&gt;&lt;span class="lnt"&gt;43
+&lt;/span&gt;&lt;span class="lnt"&gt;44
+&lt;/span&gt;&lt;span class="lnt"&gt;45
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-HLSL" data-lang="HLSL"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//in object fragment shader...&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//calculate a basic fresnel term (cheap)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;fresnelTerm&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mf"&gt;1.0f&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="nb"&gt;max&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;dot&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;vector_normalDirection&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;vector_viewDirection&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt; &lt;span class="mf"&gt;0.0f&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//note: higher power means that you effectively need to be closer to the surface for the contact hardening to appear&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="n"&gt;fresnelTerm&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;pow&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;fresnelTerm&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;_ApproximationGodotFresnelPower&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//fresnelTerm = fresnelTerm * fresnelTerm; //hardcoded pow 2.0&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//fresnelTerm = fresnelTerm * fresnelTerm * fresnelTerm; //hardcoded pow 3.0&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//fresnelTerm = fresnelTerm * fresnelTerm * fresnelTerm * fresnelTerm; //hardcoded pow 4.0 (this was the chosen value in the original godot improvement)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//compute reflection vector&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;vector_reflectionDirection&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;reflect&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;vector_viewDirection&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;vector_normalDirection&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//remap our smoothness parameter to PBR roughness&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;perceptualRoughness&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mf"&gt;1.0&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;_Smoothness&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;roughness&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;perceptualRoughness&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;perceptualRoughness&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//compute the cubemap mip level based on perceptual roughness&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//NOTE: this is basically perceptualRoughness * UNITY_SPECCUBE_LOD_STEPS&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;mipOriginal&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;UnityPerceptualRoughnessToMipmapLevel&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;perceptualRoughness&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//this will store the &amp;#34;intersectionDistance&amp;#34; result from the box projection&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;intersectionDistance&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mo"&gt;0&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//if box projection is enabled, modify our vector to project reflections onto a world space box (defined by the reflection probe)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="n"&gt;vector_reflectionDirection&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;UnityBoxProjectedCubemapDirectionDefault&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;vector_reflectionDirection&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;vector_worldPosition&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;unity_SpecCube0_ProbePosition&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;unity_SpecCube0_BoxMin&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;unity_SpecCube0_BoxMax&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;intersectionDistance&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//remap distance to be relative to amount of mips.&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;reflectionRoughness&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;intersectionDistance&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt; &lt;span class="n"&gt;UNITY_SPECCUBE_LOD_STEPS&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//reflection roughness shifts depending on the fresnel term&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="n"&gt;reflectionRoughness&lt;/span&gt; &lt;span class="o"&gt;*=&lt;/span&gt; &lt;span class="mf"&gt;1.0&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;fresnelTerm&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//increase roughness when viewing angle is perpendicular to avoid overly sharp reflections on rough surfaces.&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="n"&gt;reflectionRoughness&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mf"&gt;1.0&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;fresnelTerm&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;perceptualRoughness&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="n"&gt;reflectionRoughness&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;saturate&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;reflectionRoughness&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//ensures fully rough materials don&amp;#39;t have reflection contact hardening.&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;mipMin&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;roughness&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;roughness&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;UNITY_SPECCUBE_LOD_STEPS&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;mip&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;lerp&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;mipMin&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;mipOriginal&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;reflectionRoughness&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//sample the provided reflection probe at the given mip level&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="n"&gt;enviormentReflection&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;UNITY_SAMPLE_TEXCUBE_LOD&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;unity_SpecCube0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;vector_reflectionDirection&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xyz&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;mip&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="n"&gt;enviormentReflection&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;rgb&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;DecodeHDR&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;enviormentReflection&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;unity_SpecCube0_HDR&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;This is a recent development I&amp;rsquo;ve been following. As a result of this repository the folks with Godot Engine have been implementing this feature to improve their reflections rendering.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a class="link" href="https://github.com/godotengine/godot-proposals/issues/11670" target="_blank" rel="noopener"
+&gt;Godot Proposal 11670&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="https://github.com/godotengine/godot/pull/106292" target="_blank" rel="noopener"
+&gt;Godot Pull 106292&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Their implementation is based on my original approximation but a fresnel term has been added as an additional attribute &lt;em&gt;(beyond just surface position/distance)&lt;/em&gt; to offset the mip level of the reflection. This has been checked against Blender Cycles renderer for ground-truth comparisons, and &lt;a class="link" href="https://github.com/godotengine/godot/pull/106292" target="_blank" rel="noopener"
+&gt;accuracy is much improved&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Apperance wise the effect is more muted and less pronounced, but when at grazing angles the effect starts to become more noticable.&lt;/p&gt;
+&lt;p&gt;If we check the Godot approximation against my inital one we can see that the reflections get sharper when we get closer to the surface &lt;em&gt;(thanks to the fresnel term)&lt;/em&gt; where with my original approximation it does not.&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="3-box-projectedApproxE.png" width="49%" /&gt;
+&lt;img src="5-box-projectedGodotC.png" width="49%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Left: Approximation | Right: Godot Approximation with Fresnel&lt;/em&gt;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="3-box-projectedApproxF.png" width="49%" /&gt;
+&lt;img src="5-box-projectedGodotD.png" width="49%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Left: Approximation + Normal Mapping | Right: Godot Approximation with Fresnel + Normal Mapping&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;An additional improvement/optimization to this would be utilizing the actual PBR fresnel term that normally gets calculated and multiplied with your environment reflection, rather than just calculating a new fresnel term for this specific instance.&lt;/p&gt;
+&lt;p&gt;Once again, a big improvement over the classic method, and it&amp;rsquo;s cheap!&lt;/p&gt;
+&lt;h4 id="contact-hardening-raytraced"&gt;&lt;a href="#contact-hardening-raytraced" class="header-anchor"&gt;&lt;/a&gt;Contact Hardening: Raytraced
+&lt;/h4&gt;&lt;p&gt;&lt;img src="https://frostbone25.github.io/p/adventures-box-projected-reflections/6-box-projectedRayA.png"
+width="1117"
+height="662"
+srcset="https://frostbone25.github.io/p/adventures-box-projected-reflections/6-box-projectedRayA_hu_11660c32aff4df37.png 480w, https://frostbone25.github.io/p/adventures-box-projected-reflections/6-box-projectedRayA_hu_8d296f9b4898bb34.png 1024w"
+loading="lazy"
+alt="6-box-projectedRayA"
+class="gallery-image"
+data-flex-grow="168"
+data-flex-basis="404px"
+&gt;&lt;/p&gt;
+&lt;p&gt;Code can be found in here&amp;hellip;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a class="link" href="https://github.com/frostbone25/Unity-Improved-Box-Projected-Reflections/blob/main/ImprovedBoxProjectedReflections/Assets/Shaders/ReflectionTracing.cginc" target="_blank" rel="noopener"
+&gt;ReflectionTracing.cginc&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="https://github.com/frostbone25/Unity-Improved-Box-Projected-Reflections/blob/main/ImprovedBoxProjectedReflections/Assets/Shaders/ImprovedBoxProjectedReflections.shader" target="_blank" rel="noopener"
+&gt;ImprovedBoxProjectedReflections.shader&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;This is the most accurate method out of the previous ones we had. This is equivalent to ground truth, and unlike the approximations it can properly model anisotropic specular &lt;em&gt;(specular elongation)&lt;/em&gt;. It&amp;rsquo;s the most accurate and best looking one. However in comparison it is more complicated and slower than previous methods and requires alot of samples to mitigate artifacts &lt;em&gt;&lt;a class="link" href="#contact-hardening-raytracing-options" &gt;(More on this later)&lt;/a&gt;&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;It&amp;rsquo;s a massive improvement over the classic method and the approximations, but it&amp;rsquo;s more complicated and expensive &lt;em&gt;(Again more on this later, it&amp;rsquo;s not as bad as you think)&lt;/em&gt;&lt;/p&gt;
+&lt;h3 id="contact-hardening-comparisons-non-normal-mapped-material"&gt;&lt;a href="#contact-hardening-comparisons-non-normal-mapped-material" class="header-anchor"&gt;&lt;/a&gt;Contact Hardening Comparisons (Non-Normal Mapped Material)
+&lt;/h3&gt;&lt;p float="left"&gt;
+&lt;img src="2-box-projectedA.png" width="19%" /&gt;
+&lt;img src="3-box-projectedApproxA.png" width="19%" /&gt;
+&lt;img src="4-box-projectedHDRPA.png" width="19%" /&gt;
+&lt;img src="5-box-projectedGodotA.png" width="19%" /&gt;
+&lt;img src="6-box-projectedRayA.png" width="19%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Left To Right: None, Approximation, HDRP Approximation, Godot Approximation, Raytraced&lt;/em&gt;&lt;/p&gt;
+&lt;h3 id="contact-hardening-comparisons-normal-mapped-material"&gt;&lt;a href="#contact-hardening-comparisons-normal-mapped-material" class="header-anchor"&gt;&lt;/a&gt;Contact Hardening Comparisons (Normal Mapped Material)
+&lt;/h3&gt;&lt;p float="left"&gt;
+&lt;img src="2-box-projectedB.png" width="19%" /&gt;
+&lt;img src="3-box-projectedApproxB.png" width="19%" /&gt;
+&lt;img src="4-box-projectedHDRPB.png" width="19%" /&gt;
+&lt;img src="5-box-projectedGodotB.png" width="19%" /&gt;
+&lt;img src="6-box-projectedRayB.png" width="19%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Left To Right: None, Approximation, HDRP Approximation, Godot Approximation, Raytraced&lt;/em&gt;&lt;/p&gt;
+&lt;h4 id="contact-hardening-raytracing-options"&gt;&lt;a href="#contact-hardening-raytracing-options" class="header-anchor"&gt;&lt;/a&gt;Contact Hardening: Raytracing Options
+&lt;/h4&gt;&lt;p&gt;Earlier we mentioned that while this method is the most accurate and high quality, it&amp;rsquo;s also expensive when compared to it&amp;rsquo;s approximated counterparts. I also want to note that it&amp;rsquo;s important also to keep in mind the &amp;ldquo;raytracing&amp;rdquo; being done here is fairly simple compared to what one might expect, it&amp;rsquo;s just AABB ray testing against the reflection probe bounds. It&amp;rsquo;s all software-based and can even run on a Quest 2 standalone at a decent framerate. With that said there are a few of things we can do here to try to help both improve quality and performance.&lt;/p&gt;
+&lt;p&gt;The current implementation also is using an Importance Sampled GGX Function for specular convolution, at 64 samples.&lt;/p&gt;
+&lt;p&gt;The blue noise also being used later in the examples/project is a precomputed 3D Texture with 64 slices (64 iterations). The 3D texture being built from 64 slices of precomputed blue noise textures from &lt;a class="link" href="https://momentsingraphics.de/BlueNoise.html" target="_blank" rel="noopener"
+&gt;Moments in Graphics by Christoph Peters&lt;/a&gt;. I do also have precomputed &lt;a class="link" href="https://developer.nvidia.com/blog/rendering-in-real-time-with-spatiotemporal-blue-noise-textures-part-1/" target="_blank" rel="noopener"
+&gt;Spatio-Temporal Blue Noise (STBN)&lt;/a&gt; volumes in the project that I also combined, however for some reason the result&amp;rsquo;s I got were worse than with the ones from &lt;a class="link" href="https://momentsingraphics.de/BlueNoise.html" target="_blank" rel="noopener"
+&gt;Christoph Peters&lt;/a&gt;. Might be something I did wrong or incorrectly, someone let me know please!&lt;/p&gt;
+&lt;h4 id="static-noise-non-deterministic-sampling"&gt;&lt;a href="#static-noise-non-deterministic-sampling" class="header-anchor"&gt;&lt;/a&gt;Static Noise &lt;em&gt;(Non-Deterministic Sampling)&lt;/em&gt;
+&lt;/h4&gt;&lt;p&gt;&lt;em&gt;Left: Static White Noise | Right: Static Blue Noise&lt;/em&gt;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="raytrace-1-whitenoise.png" width="49%" /&gt;
+&lt;img src="raytrace-2-bluenoise.png" width="49%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;By default white noise is being used. In the current implementation we can use blue-noise sampling to try to improve the perceptual quality. Comparing side by side the difference is small in a static scenario like this, but the blue noise is noticably more consistent and pleasing compared to white noise. At lower sample counts obviously the blue noise shows it&amp;rsquo;s strengths more but of course lower samples = lots of noise regardless.&lt;/p&gt;
+&lt;p&gt;One other thing also featured in the shader is a &amp;ldquo;Mip Offset&amp;rdquo; cheat. As it turns out the approximations we have earlier actually work great here and work as a way to blur the results the further the fragment/pixel is. This is something that can be done but in my opinon I would caution against it. Reason being that it alters the reflection properties by blurring the underlying reflection a little too much, and you will start to lose out on that specular enlongation.&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Left: Blue Noise | Right: Static Blue Noise With Mip Offsetting&lt;/em&gt;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="raytrace-2-bluenoise.png" width="49%" /&gt;
+&lt;img src="raytrace-3-mip-cheat.png" width="49%" /&gt;
+&lt;/p&gt;
+&lt;h4 id="animated-noise-non-deterministic-sampling"&gt;&lt;a href="#animated-noise-non-deterministic-sampling" class="header-anchor"&gt;&lt;/a&gt;Animated Noise &lt;em&gt;(Non-Deterministic Sampling)&lt;/em&gt;
+&lt;/h4&gt;&lt;p&gt;&lt;em&gt;Left: Animated White Noise | Right: Animated Blue Noise&lt;/em&gt;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="raytrace-7-white-noise-animate.png" width="49%" /&gt;
+&lt;img src="raytrace-6-blue-noise-animate.png" width="49%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;One common solution we can try here is to animate the noise, and accumulate samples over time. This scenario is also where blue noise shines the most, since we are using 1 sample per pixel for every frame, and the sample pattern changes every frame. Using Unity&amp;rsquo;s Default TAA Here and with a stationary camera the results get cleaned up very nicely, and it&amp;rsquo;s performant as it&amp;rsquo;s only 1 sample per pixel, accumlated across multiple frames.&lt;/p&gt;
+&lt;p&gt;Now obviously the drawback of this solution is that it is temporal, it accumulates results over multiple frames. Because of that you&amp;rsquo;ll have to deal with the problems that come about with temporal rendering such as disocclusion events, changing perspective, ghosting, and that whole mess. Filtering this with an additional blur that is normal aware will help you here but that introduces inaccuracies as well with trying to retain sharp reflections. Pick your poison.&lt;/p&gt;
+&lt;h4 id="deterministic-sampling"&gt;&lt;a href="#deterministic-sampling" class="header-anchor"&gt;&lt;/a&gt;Deterministic Sampling
+&lt;/h4&gt;&lt;p&gt;If you don&amp;rsquo;t like noise, you can choose to forgo Monte-Carlo random sampling and instead go for a more uniform/deterministic sampling type. You swap artifacts from noise to aliasing, just like the noise however the more samples you have the better. Better performance in theory &lt;em&gt;(better cache coherence)&lt;/em&gt; but can look pretty bad.&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Left: Deterministic Sampling | Right: Deterministic Sampling With Mip Offset&lt;/em&gt;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="raytrace-4-deterministic.png" width="49%" /&gt;
+&lt;img src="raytrace-5-mip-cheat.png" width="49%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;I also introduced a comparison with the enabled &amp;ldquo;Mip Offsetting&amp;rdquo; approximation which can be used in conjunction with this deterministic sampling approach to get you usable results on smooth surfaces. However just like I mentioned earlier, introducing this does overly blur the reflection and you lose out on that specular elongation.&lt;/p&gt;
+&lt;h2 id="beveled-box-projection"&gt;&lt;a href="#beveled-box-projection" class="header-anchor"&gt;&lt;/a&gt;Beveled Box Projection
+&lt;/h2&gt;&lt;h4 id="beveled-box-projection-off"&gt;&lt;a href="#beveled-box-projection-off" class="header-anchor"&gt;&lt;/a&gt;Beveled Box Projection: Off
+&lt;/h4&gt;&lt;p&gt;&lt;img src="https://frostbone25.github.io/p/adventures-box-projected-reflections/bevel-off.png"
+width="1106"
+height="650"
+srcset="https://frostbone25.github.io/p/adventures-box-projected-reflections/bevel-off_hu_9f4f6d86ac49d473.png 480w, https://frostbone25.github.io/p/adventures-box-projected-reflections/bevel-off_hu_f3e8da7cd3fcb1bf.png 1024w"
+loading="lazy"
+alt="bevel-off"
+class="gallery-image"
+data-flex-grow="170"
+data-flex-basis="408px"
+&gt;&lt;/p&gt;
+&lt;p&gt;Classic box projection, it&amp;rsquo;s fast and simple, but has sharp edges and can look jarring at grazing angles especially when the cubemap is sampled at a higher mip level.&lt;/p&gt;
+&lt;h4 id="beveled-box-projection-on"&gt;&lt;a href="#beveled-box-projection-on" class="header-anchor"&gt;&lt;/a&gt;Beveled Box Projection: On
+&lt;/h4&gt;&lt;p&gt;&lt;img src="https://frostbone25.github.io/p/adventures-box-projected-reflections/bevel-on.png"
+width="1106"
+height="650"
+srcset="https://frostbone25.github.io/p/adventures-box-projected-reflections/bevel-on_hu_754a396c381dc9e7.png 480w, https://frostbone25.github.io/p/adventures-box-projected-reflections/bevel-on_hu_8611f4598b2408d1.png 1024w"
+loading="lazy"
+alt="bevel-on"
+class="gallery-image"
+data-flex-grow="170"
+data-flex-basis="408px"
+&gt;&lt;/p&gt;
+&lt;p&gt;Using a beveled box projection with an adjustable bevel factor, to smooth out the sharp edges you&amp;rsquo;d get with the classic method.&lt;/p&gt;
+&lt;p&gt;The initial idea here is&lt;/p&gt;
+&lt;ol&gt;
+&lt;li&gt;Give an artist-controlled parameter to smooth out the reflection probe projection.&lt;/li&gt;
+&lt;li&gt;A more complex but optically inspired approach by mapping the bevel factor to increased roughness, so the blurrier the reflection gets, the smoother the edges of the box projection are.&lt;/li&gt;
+&lt;/ol&gt;
+&lt;p&gt;Granted the current implementation has artifacts at high bevel values, note the top left and right sides. You also have to deal with added complexity/instruction counts for a bevel box projection.&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;In my opinion&lt;/strong&gt;: For most circumstances this is not as transformative as contact hardening, which already visually &amp;ldquo;un-boxes&amp;rdquo; the appearance of your box projected reflection for a much cheaper cost.&lt;/p&gt;
+&lt;h2 id="box-based-specular-occlusion"&gt;&lt;a href="#box-based-specular-occlusion" class="header-anchor"&gt;&lt;/a&gt;Box Based Specular Occlusion
+&lt;/h2&gt;&lt;p&gt;Another oddball thing we can do, since we have the information of an environment with a box shape. We can use the hit distance from that to do a form of specular occlusion. The closer a pixel/fragment is to the bounds of the box, the more occluded it becomes. So in circumstances where push comes to shove you need to occlude specular or reflections, this is a possible route.&lt;/p&gt;
+&lt;h4 id="box-occlusion-off"&gt;&lt;a href="#box-occlusion-off" class="header-anchor"&gt;&lt;/a&gt;Box Occlusion: Off
+&lt;/h4&gt;&lt;p&gt;&lt;img src="https://frostbone25.github.io/p/adventures-box-projected-reflections/box-occlusion-off.png"
+width="1106"
+height="650"
+srcset="https://frostbone25.github.io/p/adventures-box-projected-reflections/box-occlusion-off_hu_e02c39637bf129a.png 480w, https://frostbone25.github.io/p/adventures-box-projected-reflections/box-occlusion-off_hu_216c02d868559f26.png 1024w"
+loading="lazy"
+alt="box-occlusion-off"
+class="gallery-image"
+data-flex-grow="170"
+data-flex-basis="408px"
+&gt;&lt;/p&gt;
+&lt;p&gt;Using the classic box projected reflections, note the glowing apperance where the floor meets the walls.&lt;/p&gt;
+&lt;h4 id="box-occlusion-on"&gt;&lt;a href="#box-occlusion-on" class="header-anchor"&gt;&lt;/a&gt;Box Occlusion: On
+&lt;/h4&gt;&lt;p&gt;&lt;img src="https://frostbone25.github.io/p/adventures-box-projected-reflections/box-occlusion-on.png"
+width="1106"
+height="650"
+srcset="https://frostbone25.github.io/p/adventures-box-projected-reflections/box-occlusion-on_hu_911c9ae8cd49a58d.png 480w, https://frostbone25.github.io/p/adventures-box-projected-reflections/box-occlusion-on_hu_d362dd7150636f51.png 1024w"
+loading="lazy"
+alt="box-occlusion-on"
+class="gallery-image"
+data-flex-grow="170"
+data-flex-basis="408px"
+&gt;&lt;/p&gt;
+&lt;p&gt;With box occlusion, there is an added darkening that is introduced. Eliminating the glowing apperance.&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;&lt;strong&gt;NOTE:&lt;/strong&gt;&lt;/em&gt; The material here is a pure metallic/reflective material so the results here can look pretty rough. In cases where you have non-metallic materials this can work well for specular occlusion. It depends on your project/use cases.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt; 1
+&lt;/span&gt;&lt;span class="lnt"&gt; 2
+&lt;/span&gt;&lt;span class="lnt"&gt; 3
+&lt;/span&gt;&lt;span class="lnt"&gt; 4
+&lt;/span&gt;&lt;span class="lnt"&gt; 5
+&lt;/span&gt;&lt;span class="lnt"&gt; 6
+&lt;/span&gt;&lt;span class="lnt"&gt; 7
+&lt;/span&gt;&lt;span class="lnt"&gt; 8
+&lt;/span&gt;&lt;span class="lnt"&gt; 9
+&lt;/span&gt;&lt;span class="lnt"&gt;10
+&lt;/span&gt;&lt;span class="lnt"&gt;11
+&lt;/span&gt;&lt;span class="lnt"&gt;12
+&lt;/span&gt;&lt;span class="lnt"&gt;13
+&lt;/span&gt;&lt;span class="lnt"&gt;14
+&lt;/span&gt;&lt;span class="lnt"&gt;15
+&lt;/span&gt;&lt;span class="lnt"&gt;16
+&lt;/span&gt;&lt;span class="lnt"&gt;17
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-HLSL" data-lang="HLSL"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//recompute reflection direction&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;vector_specularOcclusionReflectionDirection&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;reflect&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;vector_viewDirection&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;vector_normalDirection&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//This is the output hit distance, but we will use it as our specular occlusion factor&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;specularOcclusionFactor&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mo"&gt;0&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="n"&gt;vector_specularOcclusionReflectionDirection&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;UnityBoxProjectedCubemapDirectionDefault&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;vector_specularOcclusionReflectionDirection&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;vector_worldPosition&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;unity_SpecCube0_ProbePosition&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;unity_SpecCube0_BoxMin&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;unity_SpecCube0_BoxMax&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;specularOcclusionFactor&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//artistic parameters for specular occlusion&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="n"&gt;specularOcclusionFactor&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;pow&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;specularOcclusionFactor&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;_ExperimentalSpecularOcclusionPower&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="n"&gt;specularOcclusionFactor&lt;/span&gt; &lt;span class="o"&gt;*=&lt;/span&gt; &lt;span class="n"&gt;_ExperimentalSpecularOcclusionMultiplier&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//clamp so we stay within 0..1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="n"&gt;specularOcclusionFactor&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;saturate&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;specularOcclusionFactor&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//apply to environment reflection&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="n"&gt;enviormentReflection&lt;/span&gt; &lt;span class="o"&gt;*=&lt;/span&gt; &lt;span class="nb"&gt;lerp&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mf"&gt;1.0f&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;specularOcclusionFactor&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;_ExperimentalSpecularOcclusionIntensity&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h3 id="todoideas"&gt;&lt;a href="#todoideas" class="header-anchor"&gt;&lt;/a&gt;TODO/Ideas:
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;Raytraced: Reflection-Luminance Importance Sampling&lt;/li&gt;
+&lt;li&gt;Bevel Box Projection: Fix Artifacts&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h3 id="credits--sources"&gt;&lt;a href="#credits--sources" class="header-anchor"&gt;&lt;/a&gt;Credits / Sources
+&lt;/h3&gt;&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;&lt;a class="link" href="https://iquilezles.org/articles/intersectors/" target="_blank" rel="noopener"
+&gt;Inigo Quilez&lt;/a&gt;&lt;/strong&gt;: Beveled Box Code&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;&lt;a class="link" href="http://momentsingraphics.de/BlueNoise.html" target="_blank" rel="noopener"
+&gt;Christoph Peters&lt;/a&gt;&lt;/strong&gt;: Free blue noise textures.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;&lt;a class="link" href="https://github.com/Unity-Technologies/Graphics/blob/504e639c4e07492f74716f36acf7aad0294af16e/Packages/com.unity.render-pipelines.high-definition/Runtime/Lighting/" target="_blank" rel="noopener"
+&gt;Unity HDRP&lt;/a&gt;&lt;/strong&gt;: Approximated Distance Based Roughness Implementation&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;&lt;a class="link" href="https://github.com/Unity-Technologies/Graphics/blob/504e639c4e07492f74716f36acf7aad0294af16e/Packages/com.unity.render-pipelines.core/ShaderLibrary/" target="_blank" rel="noopener"
+&gt;Unity SRP Core&lt;/a&gt;&lt;/strong&gt;: Various Functions&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;&lt;a class="link" href="https://github.com/TwoTailsGames/Unity-Built-in-Shaders/blob/master/CGIncludes/" target="_blank" rel="noopener"
+&gt;Unity.cginc&lt;/a&gt;&lt;/strong&gt;: Unity Box Projection&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;&lt;a class="link" href="https://www.reddit.com/r/Unity3D/comments/rtmtfz/i_made_a_shader_that_accurately_diffuses_the/" target="_blank" rel="noopener"
+&gt;Cactus_On_Fire&lt;/a&gt;&lt;/strong&gt;: Inital inspiration&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;George&lt;/strong&gt;: Tipping me off to Unity HDRP&amp;rsquo;s implementation&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;&lt;a class="link" href="https://github.com/Calinou" target="_blank" rel="noopener"
+&gt;Calinou&lt;/a&gt;&lt;/strong&gt;: Improved Godot version of Contact Hardening Approximation.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;&lt;a class="link" href="https://github.com/lander-vr" target="_blank" rel="noopener"
+&gt;lander-vr&lt;/a&gt;&lt;/strong&gt;: Improved Godot version of Contact Hardening Approximation.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;&lt;a class="link" href="https://github.com/clayjohn" target="_blank" rel="noopener"
+&gt;clayjohn&lt;/a&gt;&lt;/strong&gt;: Improved Godot version of Contact Hardening Approximation.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;em&gt;By: David Matos&lt;/em&gt;&lt;/p&gt;</description></item></channel></rss>

@@ -1,0 +1,138 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 800 500" width="800" height="500" font-family="'Georgia', serif">
+  <defs>
+    <radialGradient id="bgGrad" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#1a1a2e;stop-opacity:1" />
+      <stop offset="100%" style="stop-color:#0d0d1a;stop-opacity:1" />
+    </radialGradient>
+    <radialGradient id="pointGlow" cx="50%" cy="50%" r="50%">
+      <stop offset="0%" style="stop-color:#ffffff;stop-opacity:0.9" />
+      <stop offset="100%" style="stop-color:#a0c4ff;stop-opacity:0" />
+    </radialGradient>
+    <marker id="arrowEscape" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#4ade80" />
+    </marker>
+    <marker id="arrowOccluded" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#f87171" />
+    </marker>
+    <marker id="arrowNormal" markerWidth="8" markerHeight="8" refX="6" refY="3" orient="auto">
+      <path d="M0,0 L0,6 L8,3 z" fill="#facc15" />
+    </marker>
+    <filter id="glow">
+      <feGaussianBlur stdDeviation="3" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+    <filter id="softGlow">
+      <feGaussianBlur stdDeviation="6" result="coloredBlur"/>
+      <feMerge>
+        <feMergeNode in="coloredBlur"/>
+        <feMergeNode in="SourceGraphic"/>
+      </feMerge>
+    </filter>
+  </defs>
+
+  <!-- Background -->
+  <rect width="800" height="500" fill="url(#bgGrad)" />
+
+  <!-- Subtle grid lines -->
+  <g stroke="#ffffff" stroke-opacity="0.03" stroke-width="1">
+    <line x1="0" y1="100" x2="800" y2="100"/>
+    <line x1="0" y1="200" x2="800" y2="200"/>
+    <line x1="0" y1="300" x2="800" y2="300"/>
+    <line x1="0" y1="400" x2="800" y2="400"/>
+    <line x1="100" y1="0" x2="100" y2="500"/>
+    <line x1="200" y1="0" x2="200" y2="500"/>
+    <line x1="300" y1="0" x2="300" y2="500"/>
+    <line x1="400" y1="0" x2="400" y2="500"/>
+    <line x1="500" y1="0" x2="500" y2="500"/>
+    <line x1="600" y1="0" x2="600" y2="500"/>
+    <line x1="700" y1="0" x2="700" y2="500"/>
+  </g>
+
+  <!-- Ground surface -->
+  <rect x="0" y="340" width="800" height="160" fill="#1e293b" />
+  <rect x="0" y="338" width="800" height="4" fill="#334155" />
+
+  <!-- Occluding geometry (rock/wall on the left) -->
+  <polygon points="80,340 200,340 200,200 150,170 100,210 80,260" fill="#2d3748" />
+  <polygon points="80,340 200,340 200,200 150,170 100,210 80,260" fill="none" stroke="#4a5568" stroke-width="1.5" />
+  <!-- Subtle highlight on geometry -->
+  <line x1="150" y1="170" x2="200" y2="200" stroke="#4a5568" stroke-width="1" opacity="0.5"/>
+
+  <!-- Hemisphere arc (dashed) -->
+  <path d="M 270,340 A 160,160 0 0,1 590,340" fill="none" stroke="#4a90d9" stroke-width="1.5" stroke-dasharray="6,4" opacity="0.6"/>
+
+  <!-- Surface point glow -->
+  <circle cx="430" cy="340" r="30" fill="url(#pointGlow)" opacity="0.3" />
+
+  <!-- ESCAPED RAYS (green) -->
+  <!-- Ray 1: straight up -->
+  <line x1="430" y1="340" x2="430" y2="110" stroke="#4ade80" stroke-width="1.8" stroke-opacity="0.85" marker-end="url(#arrowEscape)" filter="url(#glow)"/>
+  <!-- Ray 2: slight right -->
+  <line x1="430" y1="340" x2="530" y2="130" stroke="#4ade80" stroke-width="1.8" stroke-opacity="0.85" marker-end="url(#arrowEscape)" filter="url(#glow)"/>
+  <!-- Ray 3: more right -->
+  <line x1="430" y1="340" x2="610" y2="185" stroke="#4ade80" stroke-width="1.8" stroke-opacity="0.85" marker-end="url(#arrowEscape)" filter="url(#glow)"/>
+  <!-- Ray 4: far right grazing -->
+  <line x1="430" y1="340" x2="580" y2="340" stroke="#4ade80" stroke-width="1.8" stroke-opacity="0.5" marker-end="url(#arrowEscape)"/>
+  <!-- Ray 5: slight left upper -->
+  <line x1="430" y1="340" x2="345" y2="145" stroke="#4ade80" stroke-width="1.8" stroke-opacity="0.85" marker-end="url(#arrowEscape)" filter="url(#glow)"/>
+
+  <!-- OCCLUDED RAYS (red) - hitting the geometry on the left -->
+  <!-- Ray 1: hits wall -->
+  <line x1="430" y1="340" x2="215" y2="260" stroke="#f87171" stroke-width="1.8" stroke-opacity="0.85" marker-end="url(#arrowOccluded)" filter="url(#glow)"/>
+  <!-- Ray 2: hits wall top -->
+  <line x1="430" y1="340" x2="230" y2="195" stroke="#f87171" stroke-width="1.8" stroke-opacity="0.85" marker-end="url(#arrowOccluded)" filter="url(#glow)"/>
+  <!-- Ray 3: grazing left -->
+  <line x1="430" y1="340" x2="275" y2="340" stroke="#f87171" stroke-width="1.8" stroke-opacity="0.5" marker-end="url(#arrowOccluded)"/>
+
+  <!-- Surface normal (yellow) -->
+  <line x1="430" y1="340" x2="430" y2="200" stroke="#facc15" stroke-width="2.5" marker-end="url(#arrowNormal)" filter="url(#glow)"/>
+
+  <!-- Surface point -->
+  <circle cx="430" cy="340" r="6" fill="#ffffff" filter="url(#softGlow)"/>
+  <circle cx="430" cy="340" r="3" fill="#facc15"/>
+
+  <!-- Labels -->
+  <!-- Normal label -->
+  <text x="440" y="262" fill="#facc15" font-size="13" font-style="italic" opacity="0.95">surface normal</text>
+
+  <!-- Escaped ray label -->
+  <text x="615" y="175" fill="#4ade80" font-size="13" font-style="italic" opacity="0.95">unoccluded ray</text>
+  <text x="615" y="191" fill="#4ade80" font-size="11" opacity="0.7">(escapes freely)</text>
+
+  <!-- Occluded ray label -->
+  <text x="90" y="158" fill="#f87171" font-size="13" font-style="italic" opacity="0.95">occluded ray</text>
+  <text x="90" y="174" fill="#f87171" font-size="11" opacity="0.7">(hits geometry)</text>
+
+  <!-- Surface point label -->
+  <text x="442" y="365" fill="#ffffff" font-size="12" opacity="0.7">surface point p</text>
+
+  <!-- Hemisphere label -->
+  <text x="390" y="108" fill="#4a90d9" font-size="12" opacity="0.7" text-anchor="middle">cosine-weighted hemisphere</text>
+
+  <!-- Occluding geometry label -->
+  <text x="88" y="355" fill="#94a3b8" font-size="11" opacity="0.7">occluding</text>
+  <text x="88" y="368" fill="#94a3b8" font-size="11" opacity="0.7">geometry</text>
+
+  <!-- AO value callout -->
+  <rect x="580" y="370" width="185" height="58" rx="6" fill="#0f172a" stroke="#334155" stroke-width="1"/>
+  <text x="672" y="392" fill="#cbd5e1" font-size="12" text-anchor="middle">AO ≈ unoccluded rays /</text>
+  <text x="672" y="408" fill="#cbd5e1" font-size="12" text-anchor="middle">total rays cast</text>
+  <text x="672" y="420" fill="#94a3b8" font-size="10" text-anchor="middle">0.0 = fully occluded · 1.0 = fully open</text>
+
+  <!-- Title -->
+  <text x="400" y="42" fill="#e2e8f0" font-size="18" font-weight="bold" text-anchor="middle" letter-spacing="1">Ambient Occlusion — Ray Casting</text>
+  <text x="400" y="62" fill="#94a3b8" font-size="12" text-anchor="middle">Monte Carlo sampling across a hemisphere at surface point p</text>
+
+  <!-- Legend -->
+  <line x1="20" y1="458" x2="45" y2="458" stroke="#facc15" stroke-width="2"/>
+  <text x="50" y="462" fill="#facc15" font-size="11">Surface Normal</text>
+  <line x1="150" y1="458" x2="175" y2="458" stroke="#4ade80" stroke-width="2"/>
+  <text x="180" y="462" fill="#4ade80" font-size="11">Unoccluded Ray</text>
+  <line x1="300" y1="458" x2="325" y2="458" stroke="#f87171" stroke-width="2"/>
+  <text x="330" y="462" fill="#f87171" font-size="11">Occluded Ray</text>
+  <line x1="430" y1="458" x2="455" y2="458" stroke="#4a90d9" stroke-width="1.5" stroke-dasharray="4,3"/>
+  <text x="460" y="462" fill="#4a90d9" font-size="11">Hemisphere Boundary</text>
+</svg>

@@ -1,0 +1,730 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Normal on David Matos</title><link>https://frostbone25.github.io/tags/normal/</link><description>Recent content in Normal on David Matos</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Wed, 18 Feb 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://frostbone25.github.io/tags/normal/index.xml" rel="self" type="application/rss+xml"/><item><title>Using Bent Normals in Object Shaders</title><link>https://frostbone25.github.io/p/using-bent-normals-in-object-shaders/</link><pubDate>Wed, 18 Feb 2026 00:00:00 +0000</pubDate><guid>https://frostbone25.github.io/p/using-bent-normals-in-object-shaders/</guid><description>&lt;img src="https://frostbone25.github.io/p/using-bent-normals-in-object-shaders/content/A-bent.jpg" alt="Featured image of post Using Bent Normals in Object Shaders" /&gt;&lt;p&gt;&lt;em&gt;By: David Matos&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Sharing personal my notes, and experiments with bent normals.&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;NOTE: I would like to preface this by saying if there are any inaccuracies with my explanations or defintions please let me know. If you have suggestions or techniques to share that leverage bent normals in this context also let me know!&lt;/em&gt;&lt;/p&gt;
+&lt;h4 id="table-of-contents"&gt;&lt;a href="#table-of-contents" class="header-anchor"&gt;&lt;/a&gt;Table of Contents
+&lt;/h4&gt;&lt;ul&gt;
+&lt;li&gt;&lt;a class="link" href="#Preface" &gt;Preface&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#what-are-bent-normals" &gt;What are Bent Normals?&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#why" &gt;Why?&lt;/a&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a class="link" href="#why-should-i-bother-using-a-bent-normal-map" &gt;Why should I bother using a bent normal map?&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#will-bent-normals-replace-normal-maps" &gt;Will bent normals replace normal maps?&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#will-bent-normals-will-cost-an-extra-texture-sample" &gt;Will bent normals will cost an extra texture sample?&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#are-bent-normals-really-worth-it" &gt;Are bent normals really worth it?&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#how-to-generate-bent-normals" &gt;How to Generate Bent Normals&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#using-bent-normal-in-an-object-shader" &gt;Using Bent Normal in an Object Shader&lt;/a&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a class="link" href="#optimization-bonus" &gt;Optimization Bonus&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#bent-normals-use-case-specular-occlusion" &gt;Bent Normals Use Case: Specular Occlusion&lt;/a&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a class="link" href="#bent-normal-specular-occlusion-implementation" &gt;Bent Normal Specular Occlusion Implementation&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#bent-normals-use-case-diffuse-global-illumination" &gt;Bent Normals Use Case: Diffuse Global Illumination&lt;/a&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a class="link" href="#bent-normal-diffuse-global-illumination-implementation" &gt;Bent Normal Diffuse Global Illumination Implementation&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#references--sources" &gt;References / Sources&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/A-no-bent.jpg" width="49%" /&gt;
+&lt;img src="content/A-bent.jpg" width="49%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Left: No bent normals | Right: Bent Normals&lt;/em&gt;&lt;/p&gt;
+&lt;h1 id="preface"&gt;&lt;a href="#preface" class="header-anchor"&gt;&lt;/a&gt;Preface
+&lt;/h1&gt;&lt;p&gt;If you were like me before learning about bent normals, you might have been very confused by them, wondering what the fuss is all about.&lt;/p&gt;
+&lt;p&gt;Many popular engines have them and even document it, but unfortunately some of those documentations I stumbled across were not enough for me to really illustrate the full effects of bent normals. Not only that the application of bent normals to regular shading I found to be a bit of a mystery.&lt;/p&gt;
+&lt;p&gt;Well, I hope with my post here I can at the very least help explain and show you bent normals, how to generate them, and more importantly the actual applications of bent normals and what they can be used to do &lt;em&gt;(in the context of object shaders)&lt;/em&gt;. After taking the plunge and diving into it myself and implementing it in my projects, I find it to be quite transformative, I hope you will too!&lt;/p&gt;
+&lt;h1 id="what-are-bent-normals"&gt;&lt;a href="#what-are-bent-normals" class="header-anchor"&gt;&lt;/a&gt;What are Bent Normals?
+&lt;/h1&gt;&lt;p&gt;Before getting into Bent Normals, you need to be familiar with Ambient Occlusion.&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://frostbone25.github.io/p/using-bent-normals-in-object-shaders/content/texture-ao.png"
+width="4096"
+height="4096"
+srcset="https://frostbone25.github.io/p/using-bent-normals-in-object-shaders/content/texture-ao_hu_20e85dbfcc9bbac0.png 480w, https://frostbone25.github.io/p/using-bent-normals-in-object-shaders/content/texture-ao_hu_6de206007bd27426.png 1024w"
+loading="lazy"
+alt="texture-ao"
+class="gallery-image"
+data-flex-grow="100"
+data-flex-basis="240px"
+&gt;
+&lt;em&gt;&lt;a class="link" href="https://polyhaven.com/a/gray_rocks" target="_blank" rel="noopener"
+&gt;Ambient Occlusion Map of the Gray Rocks Texture Asset from PolyHaven&lt;/a&gt;&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Ambient Occlusion is a technique used to calculate the occlusion/darkening of light in areas. It&amp;rsquo;s intended to solve part of a bigger problem in rendering, that being Global Illumination. When objects get close to each other a soft shadowing or darkening effect starts to appear, this is because the light rays that are normally lighting the objects are now being blocked by each other.&lt;/p&gt;
+&lt;p&gt;In the occlusion map up above you can see that the rocks on the surface are mostly white, but as you look deeper into the crevices and cracks the shadowing increases because there is more geometry around blocking light.&lt;/p&gt;
+&lt;p&gt;Now this final occlusion map texture is usually just a single-scalar value used to darken the final lighting.&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/texture-bent-normal.png" width="49%" /&gt;
+&lt;img src="content/texture-normal.png" width="49%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Left: Generated Bent Normal Map | Right: Normal Map&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Bent Normals can be viewed as an extension of ambient occlusion maps. Instead of storing the single final &amp;ldquo;occlusion&amp;rdquo; scalar value, &lt;strong&gt;it stores the average least occluded direction of light.&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;In simpler terms, it&amp;rsquo;s the same as a surface normal map, except the original surface normals are shifted/biased away from dark areas and towards the the light. This direction is made up of 3 values &lt;em&gt;(X, Y, Z)&lt;/em&gt; and gets stored in a texture map just like a regular normal map.&lt;/p&gt;
+&lt;h1 id="why"&gt;&lt;a href="#why" class="header-anchor"&gt;&lt;/a&gt;Why?
+&lt;/h1&gt;&lt;p&gt;This is the important question, and the question I was left wondering&amp;hellip; why?&lt;/p&gt;
+&lt;p&gt;I won&amp;rsquo;t write all of the possible questions, but these were the main ones questions that I wanted answers to before I was convinced to use them in my projects.&lt;/p&gt;
+&lt;h4 id="why-should-i-bother-using-a-bent-normal-map"&gt;&lt;a href="#why-should-i-bother-using-a-bent-normal-map" class="header-anchor"&gt;&lt;/a&gt;Why should I bother using a bent normal map?
+&lt;/h4&gt;&lt;p&gt;If you want to bump up the quality of your shading, without adding too much cost bent normals are a good way to start. In this post I share a couple of the main cases where using bent normals has great benifits.&lt;/p&gt;
+&lt;p&gt;For instance using bent normals to shade objects from &lt;a class="link" href="#bent-normals-use-case-diffuse-global-illumination" &gt;global illumination&lt;/a&gt; &lt;em&gt;(or indirect lighting)&lt;/em&gt; sources like light probes, or using it to calculate a term for &lt;a class="link" href="#bent-normals-use-case-specular-occlusion" &gt;specular occlusion&lt;/a&gt; to improve the quality of your specular/reflections.&lt;/p&gt;
+&lt;p&gt;They can also be used for more artistic control if your going for a specific look, i.e. you want to exagerate bounce light coming from direct lights.&lt;/p&gt;
+&lt;h4 id="will-bent-normals-replace-normal-maps"&gt;&lt;a href="#will-bent-normals-replace-normal-maps" class="header-anchor"&gt;&lt;/a&gt;Will bent normals replace normal maps?
+&lt;/h4&gt;&lt;p&gt;No! They dont replace normal maps. Normal maps are still critical for describing surface detail, especially for direct lighting responses.&lt;/p&gt;
+&lt;p&gt;Bent normals on the other hand are only used for supplement lighting terms. Sampling global illumination is one example.&lt;/p&gt;
+&lt;h4 id="will-bent-normals-will-cost-an-extra-texture-sample"&gt;&lt;a href="#will-bent-normals-will-cost-an-extra-texture-sample" class="header-anchor"&gt;&lt;/a&gt;Will bent normals will cost an extra texture sample?
+&lt;/h4&gt;&lt;p&gt;This is correct for the most part, Bent Normals are basically another normal map that you have to sample and deal with. Memory and performance wise this can be a huge deterrent.&lt;/p&gt;
+&lt;p&gt;But&amp;hellip;&lt;/p&gt;
+&lt;p&gt;It&amp;rsquo;s actually possible to combine bent normals with regular normal maps! &lt;em&gt;&lt;a class="link" href="#optimization-bonus" &gt;(I share some code later on how to do this)&lt;/a&gt;&lt;/em&gt; That way you only have to deal with just 1 texture in the end, which is good for keeping memory and performance tight.&lt;/p&gt;
+&lt;p&gt;The only expense really is some more instructions to recalculate a component and lug around a &amp;ldquo;bent normal direction&amp;rdquo; vector in the shader, along with some additional terms that you can calculate later for improving shading thanks to the bent normal vector.&lt;/p&gt;
+&lt;h4 id="are-bent-normals-really-worth-it"&gt;&lt;a href="#are-bent-normals-really-worth-it" class="header-anchor"&gt;&lt;/a&gt;Are bent normals really worth it?
+&lt;/h4&gt;&lt;p&gt;If your project uses a lot of static lighting, I think bent normals are a must. Either with lightmaps or with light probes. Even if you also have real-time lighting and provide data to objects in your scene in the form of probes, or an irradiance volume bent normals can help you out there.&lt;/p&gt;
+&lt;p&gt;If it&amp;rsquo;s something you think is worth implementing, I invite you to check out the rest of this post as I show the applications of it in the context of object shaders. Then you can really determine if it&amp;rsquo;s worth implementing for your own projects or not.&lt;/p&gt;
+&lt;p&gt;Ok, so where can I start?&lt;/p&gt;
+&lt;h1 id="how-to-generate-bent-normals"&gt;&lt;a href="#how-to-generate-bent-normals" class="header-anchor"&gt;&lt;/a&gt;How to Generate Bent Normals
+&lt;/h1&gt;&lt;p&gt;To start using bent normals you need to have bent normal maps. If you have art assets already generated with them, your in luck as you can start using them right away!&lt;/p&gt;
+&lt;p&gt;If your like me and probably most people however&amp;hellip; how can I generate one?&lt;/p&gt;
+&lt;p&gt;Fortunately there are a number of different ways that exist. To start, programs like &lt;a class="link" href="https://www.adobe.com/products/substance3d/apps/painter.html" target="_blank" rel="noopener"
+&gt;Substance Painter&lt;/a&gt; for example have an option when baking mesh maps where you can actually generate bent normals.&lt;/p&gt;
+&lt;p&gt;If you don&amp;rsquo;t have access to such apps, you can use a tool like &lt;a class="link" href="https://github.com/Fewes/BakerBoy" target="_blank" rel="noopener"
+&gt;Fewes&amp;rsquo;s BakerBoy&lt;/a&gt; asset for Unity which can generate both an ambient occlusion map, and a bent normal map for your art assets.&lt;/p&gt;
+&lt;p&gt;If you don&amp;rsquo;t have any of that and are curious as to how it&amp;rsquo;s actually generated, I&amp;rsquo;ll walk you through it!&lt;/p&gt;
+&lt;p&gt;Conceptually, Bent Normals are generated in almost the same exact way you calculate ambient occlusion. The only big difference is that instead of outputting the final averaged occlusion value, you output only the averaged and &amp;ldquo;valid&amp;rdquo; sample directions that were used during the ambient occlusion calculation.&lt;/p&gt;
+&lt;p&gt;To help illustrate things, I will share some code from an offline tool I built where I could generate ambient occlusion for a material given a height map and a normal map.&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;NOTE: I would like to point out the assumptions here was that this is only for a flat planar surface, not an actual object with a complex surface/mesh. Despite that though the underlying concepts I go over still remain the exact same.&lt;/em&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt; 1
+&lt;/span&gt;&lt;span class="lnt"&gt; 2
+&lt;/span&gt;&lt;span class="lnt"&gt; 3
+&lt;/span&gt;&lt;span class="lnt"&gt; 4
+&lt;/span&gt;&lt;span class="lnt"&gt; 5
+&lt;/span&gt;&lt;span class="lnt"&gt; 6
+&lt;/span&gt;&lt;span class="lnt"&gt; 7
+&lt;/span&gt;&lt;span class="lnt"&gt; 8
+&lt;/span&gt;&lt;span class="lnt"&gt; 9
+&lt;/span&gt;&lt;span class="lnt"&gt;10
+&lt;/span&gt;&lt;span class="lnt"&gt;11
+&lt;/span&gt;&lt;span class="lnt"&gt;12
+&lt;/span&gt;&lt;span class="lnt"&gt;13
+&lt;/span&gt;&lt;span class="lnt"&gt;14
+&lt;/span&gt;&lt;span class="lnt"&gt;15
+&lt;/span&gt;&lt;span class="lnt"&gt;16
+&lt;/span&gt;&lt;span class="lnt"&gt;17
+&lt;/span&gt;&lt;span class="lnt"&gt;18
+&lt;/span&gt;&lt;span class="lnt"&gt;19
+&lt;/span&gt;&lt;span class="lnt"&gt;20
+&lt;/span&gt;&lt;span class="lnt"&gt;21
+&lt;/span&gt;&lt;span class="lnt"&gt;22
+&lt;/span&gt;&lt;span class="lnt"&gt;23
+&lt;/span&gt;&lt;span class="lnt"&gt;24
+&lt;/span&gt;&lt;span class="lnt"&gt;25
+&lt;/span&gt;&lt;span class="lnt"&gt;26
+&lt;/span&gt;&lt;span class="lnt"&gt;27
+&lt;/span&gt;&lt;span class="lnt"&gt;28
+&lt;/span&gt;&lt;span class="lnt"&gt;29
+&lt;/span&gt;&lt;span class="lnt"&gt;30
+&lt;/span&gt;&lt;span class="lnt"&gt;31
+&lt;/span&gt;&lt;span class="lnt"&gt;32
+&lt;/span&gt;&lt;span class="lnt"&gt;33
+&lt;/span&gt;&lt;span class="lnt"&gt;34
+&lt;/span&gt;&lt;span class="lnt"&gt;35
+&lt;/span&gt;&lt;span class="lnt"&gt;36
+&lt;/span&gt;&lt;span class="lnt"&gt;37
+&lt;/span&gt;&lt;span class="lnt"&gt;38
+&lt;/span&gt;&lt;span class="lnt"&gt;39
+&lt;/span&gt;&lt;span class="lnt"&gt;40
+&lt;/span&gt;&lt;span class="lnt"&gt;41
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-HLSL" data-lang="HLSL"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;occlusion&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mf"&gt;0.0f&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//accumulate samples&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mo"&gt;0&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt; &lt;span class="n"&gt;OcclusionSamples&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="o"&gt;++&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="p"&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="c1"&gt;//random point&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float2&lt;/span&gt; &lt;span class="n"&gt;random&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kt"&gt;float2&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;GenerateRandomFloat&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;uv&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="p"&gt;));&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="c1"&gt;//get sample direction&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;vector_rayDirection&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;SampleHemisphereCosine&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;random&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;x&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;random&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;y&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;vector_normalDirection&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="c1"&gt;//start off assuming we have visibility&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;occlusionFactor&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mf"&gt;1.0f&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="c1"&gt;//current surface point position&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;vector_currentRayPosition&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kt"&gt;float3&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;vector_normalizedUV&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;currentHeight&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="c1"&gt;//raymarch a ray in the sampled direction (this is our intersection test)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="nb"&gt;step&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mo"&gt;0&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="nb"&gt;step&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt; &lt;span class="n"&gt;RaySteps&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="nb"&gt;step&lt;/span&gt;&lt;span class="o"&gt;++&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;sampleHeight&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;SampleHeightMap&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;uv&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;HeightScale&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="c1"&gt;//if the current sampled height is greater than the current height, then we are intersecting geometry!&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;sampleHeight&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;currentHeight&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;RayBias&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;occlusionFactor&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mf"&gt;0.0f&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="c1"&gt;//no visibility, we hit something!&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;break&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="c1"&gt;//terminate ray&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="c1"&gt;//advance the ray&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;vector_currentRayPosition&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="n"&gt;vector_rayDirection&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt; &lt;span class="n"&gt;Resolution&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;x&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;RayStepSize&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="c1"&gt;//accumulate hits&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;occlusion&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="n"&gt;occlusionFactor&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//average samples&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="n"&gt;occlusion&lt;/span&gt; &lt;span class="o"&gt;/=&lt;/span&gt; &lt;span class="n"&gt;OcclusionSamples&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//final occlusion value is in &amp;#39;occlusion&amp;#39;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;Generating Ambient Occlusion is done Monte-Carlo style where given a point &lt;em&gt;(position)&lt;/em&gt; on a surface, and it&amp;rsquo;s normal &lt;em&gt;(orientation)&lt;/em&gt;, we want to know how visible is this point?&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://frostbone25.github.io/p/using-bent-normals-in-object-shaders/content/ao_diagram.svg"
+loading="lazy"
+alt="ao_diagram"
+&gt;&lt;/p&gt;
+&lt;p&gt;To answer this question we will take samples about the environment by firing off multiple rays in a hemisphere &lt;em&gt;(cosine-weighted hemisphere)&lt;/em&gt;. We use a hemisphere because this is a point on a surface, if we did a sphere half of the samples would hit the surface point itself which is not what we want. This surface point is not being occluded by itself, we want to know if it&amp;rsquo;s being occluded by things other than itself.&lt;/p&gt;
+&lt;p&gt;We take a a random sample direction &lt;em&gt;(for a cosine-weighted hemisphere)&lt;/em&gt;, and do an occlusion test to see if we hit something or if we don&amp;rsquo;t.&lt;/p&gt;
+&lt;p&gt;If there is a hit we return black &lt;em&gt;(or 0)&lt;/em&gt; to represent that this sample we tested is occluded &lt;em&gt;(or in shadow)&lt;/em&gt;. We do this multiple times for multiple samples, accumulate results and we end up with ambient occlusion!&lt;/p&gt;
+&lt;p&gt;Now for Bent Normals, we actually do the same thing, only with a few minor differences&amp;hellip;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt; 1
+&lt;/span&gt;&lt;span class="lnt"&gt; 2
+&lt;/span&gt;&lt;span class="lnt"&gt; 3
+&lt;/span&gt;&lt;span class="lnt"&gt; 4
+&lt;/span&gt;&lt;span class="lnt"&gt; 5
+&lt;/span&gt;&lt;span class="lnt"&gt; 6
+&lt;/span&gt;&lt;span class="lnt"&gt; 7
+&lt;/span&gt;&lt;span class="lnt"&gt; 8
+&lt;/span&gt;&lt;span class="lnt"&gt; 9
+&lt;/span&gt;&lt;span class="lnt"&gt;10
+&lt;/span&gt;&lt;span class="lnt"&gt;11
+&lt;/span&gt;&lt;span class="lnt"&gt;12
+&lt;/span&gt;&lt;span class="lnt"&gt;13
+&lt;/span&gt;&lt;span class="lnt"&gt;14
+&lt;/span&gt;&lt;span class="lnt"&gt;15
+&lt;/span&gt;&lt;span class="lnt"&gt;16
+&lt;/span&gt;&lt;span class="lnt"&gt;17
+&lt;/span&gt;&lt;span class="lnt"&gt;18
+&lt;/span&gt;&lt;span class="lnt"&gt;19
+&lt;/span&gt;&lt;span class="lnt"&gt;20
+&lt;/span&gt;&lt;span class="lnt"&gt;21
+&lt;/span&gt;&lt;span class="lnt"&gt;22
+&lt;/span&gt;&lt;span class="lnt"&gt;23
+&lt;/span&gt;&lt;span class="lnt"&gt;24
+&lt;/span&gt;&lt;span class="lnt"&gt;25
+&lt;/span&gt;&lt;span class="lnt"&gt;26
+&lt;/span&gt;&lt;span class="lnt"&gt;27
+&lt;/span&gt;&lt;span class="lnt"&gt;28
+&lt;/span&gt;&lt;span class="lnt"&gt;29
+&lt;/span&gt;&lt;span class="lnt"&gt;30
+&lt;/span&gt;&lt;span class="lnt"&gt;31
+&lt;/span&gt;&lt;span class="lnt"&gt;32
+&lt;/span&gt;&lt;span class="lnt"&gt;33
+&lt;/span&gt;&lt;span class="lnt"&gt;34
+&lt;/span&gt;&lt;span class="lnt"&gt;35
+&lt;/span&gt;&lt;span class="lnt"&gt;36
+&lt;/span&gt;&lt;span class="lnt"&gt;37
+&lt;/span&gt;&lt;span class="lnt"&gt;38
+&lt;/span&gt;&lt;span class="lnt"&gt;39
+&lt;/span&gt;&lt;span class="lnt"&gt;40
+&lt;/span&gt;&lt;span class="lnt"&gt;41
+&lt;/span&gt;&lt;span class="lnt"&gt;42
+&lt;/span&gt;&lt;span class="lnt"&gt;43
+&lt;/span&gt;&lt;span class="lnt"&gt;44
+&lt;/span&gt;&lt;span class="lnt"&gt;45
+&lt;/span&gt;&lt;span class="lnt"&gt;46
+&lt;/span&gt;&lt;span class="lnt"&gt;47
+&lt;/span&gt;&lt;span class="lnt"&gt;48
+&lt;/span&gt;&lt;span class="lnt"&gt;49
+&lt;/span&gt;&lt;span class="lnt"&gt;50
+&lt;/span&gt;&lt;span class="lnt"&gt;51
+&lt;/span&gt;&lt;span class="lnt"&gt;52
+&lt;/span&gt;&lt;span class="lnt"&gt;53
+&lt;/span&gt;&lt;span class="lnt"&gt;54
+&lt;/span&gt;&lt;span class="lnt"&gt;55
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-HLSL" data-lang="HLSL"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//variable to store the accumulated valid ray directions&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;vector_accumulatedRayDirections&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kt"&gt;float3&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mo"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mo"&gt;0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mo"&gt;0&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//amount of sucessful &amp;#39;un-occluded&amp;#39; ray directions, we divide by this later&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;unoccludedCount&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mf"&gt;0.0f&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//accumulate samples&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mo"&gt;0&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt; &lt;span class="n"&gt;OcclusionSamples&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="o"&gt;++&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="p"&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="c1"&gt;//random point&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float2&lt;/span&gt; &lt;span class="n"&gt;random&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kt"&gt;float2&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;GenerateRandomFloat&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;uv&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="p"&gt;));&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="c1"&gt;//get sample direction&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;vector_rayDirection&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;SampleHemisphereCosine&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;random&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;x&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;random&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;y&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;vector_normalDirection&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="c1"&gt;//start off assuming we have visibility&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;occlusionFactor&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mf"&gt;1.0f&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="c1"&gt;//current surface point position&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;vector_currentRayPosition&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kt"&gt;float3&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;vector_normalizedUV&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;currentHeight&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="c1"&gt;//raymarch a ray in the sampled direction&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="nb"&gt;step&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mo"&gt;0&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="nb"&gt;step&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt; &lt;span class="n"&gt;RaySteps&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="nb"&gt;step&lt;/span&gt;&lt;span class="o"&gt;++&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;sampleHeight&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;SampleHeightMap&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;uv&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;HeightScale&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="c1"&gt;//if the current sampled height is greater than the current height, then we are intersecting geometry!&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;sampleHeight&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;currentHeight&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;RayBias&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;occlusionFactor&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mf"&gt;0.0f&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="c1"&gt;//no visibility, we hit something!&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;break&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="c1"&gt;//terminate ray&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="c1"&gt;//advance the ray&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;vector_currentRayPosition&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="n"&gt;vector_rayDirection&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt; &lt;span class="n"&gt;Resolution&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;x&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;RayStepSize&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="c1"&gt;//accumulate NON-hits&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;occlusionFactor&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="mf"&gt;0.0f&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;vector_accumulatedRayDirections&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="n"&gt;vector_rayDirection&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;unoccludedCount&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="mf"&gt;1.0f&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//fallback to regular normal if for this pixel there were no good samples&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;vector_bentNormal&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;vector_normalDirection&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="k"&gt;if&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;unoccludedCount&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="mf"&gt;0.0f&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;vector_bentNormal&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;normalize&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;vector_accumulatedRayDirections&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt; &lt;span class="n"&gt;unoccludedCount&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//reduce range from -1..1 to 0..1 so we can store in a texture&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="n"&gt;vector_bentNormal&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;vector_bentNormal&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="mf"&gt;0.5f&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="mf"&gt;0.5f&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//final bent normal value is in &amp;#39;vector_bentNormal&amp;#39;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;For bent normals, we do the same things we did for ambient occlusion as before. Except&amp;hellip; instead of returning black &lt;em&gt;(or 0)&lt;/em&gt; to represent occlusion, we do something different. &lt;strong&gt;We return only the sample directions that did not hit anything.&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;We shift things a bit so rather than using hits to get occlusion, we use hits to invalidate sample directions.&lt;/strong&gt; This is because we only care about which sample directions are not occluded.&lt;/p&gt;
+&lt;p&gt;If you look back at the diagram up above, for bent normals we only care about keeping the green unoccluded rays. We take multiple samples to get the valid unoccluded sample directions, average the results and you have your bent normal!&lt;/p&gt;
+&lt;h1 id="using-bent-normal-in-an-object-shader"&gt;&lt;a href="#using-bent-normal-in-an-object-shader" class="header-anchor"&gt;&lt;/a&gt;Using Bent Normal in an Object Shader
+&lt;/h1&gt;&lt;p&gt;Once you have a bent normal map generated, you sample it just like another normal map.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt; 1
+&lt;/span&gt;&lt;span class="lnt"&gt; 2
+&lt;/span&gt;&lt;span class="lnt"&gt; 3
+&lt;/span&gt;&lt;span class="lnt"&gt; 4
+&lt;/span&gt;&lt;span class="lnt"&gt; 5
+&lt;/span&gt;&lt;span class="lnt"&gt; 6
+&lt;/span&gt;&lt;span class="lnt"&gt; 7
+&lt;/span&gt;&lt;span class="lnt"&gt; 8
+&lt;/span&gt;&lt;span class="lnt"&gt; 9
+&lt;/span&gt;&lt;span class="lnt"&gt;10
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-HLSL" data-lang="HLSL"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;texture_normalMap&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;SAMPLE_TEXTURE2D&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;_NormalMap&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;sampler_NormalMap&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;vector_uv&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;&lt;span class="n"&gt;xyz&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;texture_bentNormalMap&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;SAMPLE_TEXTURE2D&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;_BentNormalMap&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;sampler_BentNormalMap&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;vector_uv&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;&lt;span class="n"&gt;xyz&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;vector_tangentNormalDirection&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;texture_normalMap&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="mf"&gt;2.0f&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="mf"&gt;1.0f&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="c1"&gt;//scale from 0..1 to -1..1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;vector_tangentBentNormalDirection&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;texture_bentNormalMap&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="mf"&gt;2.0f&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="mf"&gt;1.0f&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="c1"&gt;//scale from 0..1 to -1..1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;vector_worldNormalDirection&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;TransformTangentToWorld&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;vector_tangentNormalDirection&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;tangentToWorld&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;vector_worldBentNormalDirection&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;TransformTangentToWorld&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;vector_tangentBentNormalDirection&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;tangentToWorld&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//both normal directions are ready to use in shading terms&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;Keep in mind you are not replacing the normal map you have for your material, nor are you blending it with the regular normal map. &lt;em&gt;(If you want to be artistic and use it for effect you certainly can, that is up to you.)&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Most shading terms need to have access to surface normals in order for them to look correct, especially specular/reflections. But the bent normal direction is intended to be used independently of the normal direction for specific lighting terms.&lt;/p&gt;
+&lt;h4 id="optimization-bonus"&gt;&lt;a href="#optimization-bonus" class="header-anchor"&gt;&lt;/a&gt;Optimization Bonus
+&lt;/h4&gt;&lt;p&gt;Earlier I described that you can actually combine a normal map and a bent normal map into a single texture map. This saves you from doing an extra texture sample, and on memory since now you have 1 texture that contains both your normal and bent normal.&lt;/p&gt;
+&lt;p&gt;This can be done by just simply omitting the Z/Blue channel from both of the normal maps, and combining them together into a single 4 component RGBA texture.&lt;/p&gt;
+&lt;p&gt;When it comes to sampling the texture, the Z/Blue can be recalculated for both the normal and bent normal at runtime to complete the terms.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt; 1
+&lt;/span&gt;&lt;span class="lnt"&gt; 2
+&lt;/span&gt;&lt;span class="lnt"&gt; 3
+&lt;/span&gt;&lt;span class="lnt"&gt; 4
+&lt;/span&gt;&lt;span class="lnt"&gt; 5
+&lt;/span&gt;&lt;span class="lnt"&gt; 6
+&lt;/span&gt;&lt;span class="lnt"&gt; 7
+&lt;/span&gt;&lt;span class="lnt"&gt; 8
+&lt;/span&gt;&lt;span class="lnt"&gt; 9
+&lt;/span&gt;&lt;span class="lnt"&gt;10
+&lt;/span&gt;&lt;span class="lnt"&gt;11
+&lt;/span&gt;&lt;span class="lnt"&gt;12
+&lt;/span&gt;&lt;span class="lnt"&gt;13
+&lt;/span&gt;&lt;span class="lnt"&gt;14
+&lt;/span&gt;&lt;span class="lnt"&gt;15
+&lt;/span&gt;&lt;span class="lnt"&gt;16
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-HLSL" data-lang="HLSL"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//normal and bent normal are packed together to a single texture map&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//saves on memory and 1 texture sample&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float4&lt;/span&gt; &lt;span class="n"&gt;texture_normalAndBentNormalMap&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;SAMPLE_TEXTURE2D&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;_NormalAndBentNormalMap&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;sampler_NormalAndBentNormalMap&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;vector_uv&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//scale from 0..1 to -1..1&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="n"&gt;texture_normalAndBentNormalMap&lt;/span&gt; &lt;span class="o"&gt;*=&lt;/span&gt; &lt;span class="mf"&gt;2.0f&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="mf"&gt;1.0f&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;vector_tangentNormalDirection&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kt"&gt;float3&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;texture_normalAndBentNormalMap&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xy&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mo"&gt;0&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;vector_tangentBentNormalDirection&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kt"&gt;float3&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;texture_normalAndBentNormalMap&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;zw&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mo"&gt;0&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//recalculate Z components&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="n"&gt;vector_tangentNormalDirection&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;z&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;sqrt&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mf"&gt;1.0f&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="nb"&gt;saturate&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;dot&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;vector_tangentNormalDirection&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xy&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;vector_tangentNormalDirection&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xy&lt;/span&gt;&lt;span class="p"&gt;)));&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="n"&gt;vector_tangentBentNormalDirection&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;z&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;sqrt&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mf"&gt;1.0f&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="nb"&gt;saturate&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;dot&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;vector_tangentBentNormalDirection&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xy&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;vector_tangentBentNormalDirection&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xy&lt;/span&gt;&lt;span class="p"&gt;)));&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;vector_worldNormalDirection&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;TransformTangentToWorld&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;vector_tangentNormalDirection&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;tangentToWorld&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;vector_worldBentNormalDirection&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;TransformTangentToWorld&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;vector_tangentBentNormalDirection&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;tangentToWorld&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;h1 id="bent-normals-use-case-specular-occlusion"&gt;&lt;a href="#bent-normals-use-case-specular-occlusion" class="header-anchor"&gt;&lt;/a&gt;Bent Normals Use Case: Specular Occlusion
+&lt;/h1&gt;&lt;p&gt;One of the main primary applications of bent normals in this context, is using them for specular occlusion.&lt;/p&gt;
+&lt;p&gt;With PBR materials and rendering being the standard now, specular/reflections contribute significantly to the final apperance of an object. Sometimes depending on how materials are authored, materials are shaded only with specular/reflections.&lt;/p&gt;
+&lt;p&gt;The issue is that in real-time rendering, specular/reflections is often lackluster in quality &lt;em&gt;(it&amp;rsquo;s much harder and often a more expensive problem to solve performance wise)&lt;/em&gt;. The solutions that do exist can only approximate them so well, and unfortunately for the most part this lack of quality often manifests into objects/materials that look like the following&amp;hellip;&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://frostbone25.github.io/p/using-bent-normals-in-object-shaders/content/specular-occlusion-none.jpg"
+width="1130"
+height="933"
+srcset="https://frostbone25.github.io/p/using-bent-normals-in-object-shaders/content/specular-occlusion-none_hu_5d7a70d37d76aed5.jpg 480w, https://frostbone25.github.io/p/using-bent-normals-in-object-shaders/content/specular-occlusion-none_hu_2654c1fa59c70f6.jpg 1024w"
+loading="lazy"
+alt="specular-occlusion-none"
+class="gallery-image"
+data-flex-grow="121"
+data-flex-basis="290px"
+&gt;&lt;/p&gt;
+&lt;p&gt;You can see that the materials on the objects here have a strange glowing apperance. Yeugh!&lt;/p&gt;
+&lt;p&gt;Now the objects in this scene are lit purely with an HDRI Probe, which is not the best case. We could try to improve things by using a reflection probe that renders the scene object themselves in here.&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;NOTE: To show off the results here is what the scene looks looking at the specular/reflection term only.&lt;/em&gt;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/reflection-hdri.png" width="49%" /&gt;
+&lt;img src="content/reflection-probe.png" width="49%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Left: HDRI Only | Right: Box Projected Reflection Probe with Rendered Objects&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Using a reflection probe that reflects the objects in the scene certainly helped a bit, but we are still seeing a lot of glowing/leaking in places where there shouldn&amp;rsquo;t be any! The reflection probe is parallax corrected so the ground plane is correct but unfortunately it can&amp;rsquo;t accurately represent the more complex objects in the scene itself. What can we do?&lt;/p&gt;
+&lt;p&gt;Fortunately there are a number of ways to solve this problem. The most common is using the ambient occlusion map we generated before and just multiplying the specular/reflections term by it. &lt;a class="link" href="https://marmosetco.tumblr.com/post/81245981087" target="_blank" rel="noopener"
+&gt;Horizon Fading&lt;/a&gt; is also another technique used in tandem to further darken things some more if the resulting surface normal goes past the vertex normal.&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://frostbone25.github.io/p/using-bent-normals-in-object-shaders/content/specular-occlusion-usual.png"
+width="1130"
+height="933"
+srcset="https://frostbone25.github.io/p/using-bent-normals-in-object-shaders/content/specular-occlusion-usual_hu_701c0f12490f5fad.png 480w, https://frostbone25.github.io/p/using-bent-normals-in-object-shaders/content/specular-occlusion-usual_hu_7ee52b66a08e9d22.png 1024w"
+loading="lazy"
+alt="specular-occlusion-usual"
+class="gallery-image"
+data-flex-grow="121"
+data-flex-basis="290px"
+&gt;&lt;/p&gt;
+&lt;p&gt;It&amp;rsquo;s better&amp;hellip; but still not quite enough.&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/specular-occlusion-none-closeup.png" width="49%" /&gt;
+&lt;img src="content/specular-occlusion-usual-closeup.png" width="49%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Left: No Specular Occlusion | Right: Occlusion + &lt;a class="link" href="https://marmosetco.tumblr.com/post/81245981087" target="_blank" rel="noopener"
+&gt;Horizon Fading&lt;/a&gt;&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;If we look closely here, we can see that using both occlusion and the horizon fading together significantly reduces the leaking that we get.&lt;/p&gt;
+&lt;p&gt;However much of the reflection is still bleeding through for the most part, and this can get worse especially if you have high contrast lighting environments, you&amp;rsquo;ll have bright sources bleeding through areas of darkness and it won&amp;rsquo;t look right.&lt;/p&gt;
+&lt;p&gt;Enter specular occlusion with bent normals&amp;hellip;&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://frostbone25.github.io/p/using-bent-normals-in-object-shaders/content/specular-occlusion-bent.png"
+width="1130"
+height="933"
+srcset="https://frostbone25.github.io/p/using-bent-normals-in-object-shaders/content/specular-occlusion-bent_hu_5136e51815b8a00a.png 480w, https://frostbone25.github.io/p/using-bent-normals-in-object-shaders/content/specular-occlusion-bent_hu_c0036dcddc22beff.png 1024w"
+loading="lazy"
+alt="specular-occlusion-bent"
+class="gallery-image"
+data-flex-grow="121"
+data-flex-basis="290px"
+&gt;&lt;/p&gt;
+&lt;p&gt;The reflection across the board now appear much less prevelant and dark. That makes sense considering our scene mostly consists of rough materials here. Importantly though if I look in the problematic areas like before&amp;hellip;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/specular-occlusion-usual-closeup.png" width="49%" /&gt;
+&lt;img src="content/specular-occlusion-bent-closeup.png" width="49%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Left: Occlusion + &lt;a class="link" href="https://marmosetco.tumblr.com/post/81245981087" target="_blank" rel="noopener"
+&gt;Horizon Fading&lt;/a&gt; | Right: Bent Normal Specular Occlusion + &lt;a class="link" href="https://marmosetco.tumblr.com/post/81245981087" target="_blank" rel="noopener"
+&gt;Horizon Fading&lt;/a&gt;&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;The leaking that I described is almost completely gone now. The reflections of the wheel is fully blocked along with most of the chains and rings that are in the shadow side. Some of the detail above still has some leaking but it&amp;rsquo;s much reduced. It feels way more plausible.&lt;/p&gt;
+&lt;p&gt;Overall this is significant improvement. This is using both a specular occlusion term derrived from the bent normal, and also the horizon fading technique.&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/specular-occlusion-none.jpg" width="32%" /&gt;
+&lt;img src="content/specular-occlusion-usual.png" width="32%" /&gt;
+&lt;img src="content/specular-occlusion-bent.png" width="32%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Left: No Specular Occlusion | Middle: Ambient Occlusion + Horizon Fading | Right: Bent Normal Specular Occlusion + Horizon Fading&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Ok cool, how can I actually do this?&lt;/p&gt;
+&lt;h3 id="bent-normal-specular-occlusion-implementation"&gt;&lt;a href="#bent-normal-specular-occlusion-implementation" class="header-anchor"&gt;&lt;/a&gt;Bent Normal Specular Occlusion Implementation
+&lt;/h3&gt;&lt;p&gt;As for implementation, the best one I&amp;rsquo;ve found is from Jimenez 2016 from &amp;ldquo;Practical Realtime Strategies for Accurate Indirect Occlusion&amp;rdquo;.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt; 1
+&lt;/span&gt;&lt;span class="lnt"&gt; 2
+&lt;/span&gt;&lt;span class="lnt"&gt; 3
+&lt;/span&gt;&lt;span class="lnt"&gt; 4
+&lt;/span&gt;&lt;span class="lnt"&gt; 5
+&lt;/span&gt;&lt;span class="lnt"&gt; 6
+&lt;/span&gt;&lt;span class="lnt"&gt; 7
+&lt;/span&gt;&lt;span class="lnt"&gt; 8
+&lt;/span&gt;&lt;span class="lnt"&gt; 9
+&lt;/span&gt;&lt;span class="lnt"&gt;10
+&lt;/span&gt;&lt;span class="lnt"&gt;11
+&lt;/span&gt;&lt;span class="lnt"&gt;12
+&lt;/span&gt;&lt;span class="lnt"&gt;13
+&lt;/span&gt;&lt;span class="lnt"&gt;14
+&lt;/span&gt;&lt;span class="lnt"&gt;15
+&lt;/span&gt;&lt;span class="lnt"&gt;16
+&lt;/span&gt;&lt;span class="lnt"&gt;17
+&lt;/span&gt;&lt;span class="lnt"&gt;18
+&lt;/span&gt;&lt;span class="lnt"&gt;19
+&lt;/span&gt;&lt;span class="lnt"&gt;20
+&lt;/span&gt;&lt;span class="lnt"&gt;21
+&lt;/span&gt;&lt;span class="lnt"&gt;22
+&lt;/span&gt;&lt;span class="lnt"&gt;23
+&lt;/span&gt;&lt;span class="lnt"&gt;24
+&lt;/span&gt;&lt;span class="lnt"&gt;25
+&lt;/span&gt;&lt;span class="lnt"&gt;26
+&lt;/span&gt;&lt;span class="lnt"&gt;27
+&lt;/span&gt;&lt;span class="lnt"&gt;28
+&lt;/span&gt;&lt;span class="lnt"&gt;29
+&lt;/span&gt;&lt;span class="lnt"&gt;30
+&lt;/span&gt;&lt;span class="lnt"&gt;31
+&lt;/span&gt;&lt;span class="lnt"&gt;32
+&lt;/span&gt;&lt;span class="lnt"&gt;33
+&lt;/span&gt;&lt;span class="lnt"&gt;34
+&lt;/span&gt;&lt;span class="lnt"&gt;35
+&lt;/span&gt;&lt;span class="lnt"&gt;36
+&lt;/span&gt;&lt;span class="lnt"&gt;37
+&lt;/span&gt;&lt;span class="lnt"&gt;38
+&lt;/span&gt;&lt;span class="lnt"&gt;39
+&lt;/span&gt;&lt;span class="lnt"&gt;40
+&lt;/span&gt;&lt;span class="lnt"&gt;41
+&lt;/span&gt;&lt;span class="lnt"&gt;42
+&lt;/span&gt;&lt;span class="lnt"&gt;43
+&lt;/span&gt;&lt;span class="lnt"&gt;44
+&lt;/span&gt;&lt;span class="lnt"&gt;45
+&lt;/span&gt;&lt;span class="lnt"&gt;46
+&lt;/span&gt;&lt;span class="lnt"&gt;47
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-HLSL" data-lang="HLSL"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;GetSpecularOcclusionUsingBentNormal&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;half3&lt;/span&gt; &lt;span class="n"&gt;vector_reflectionDirection&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;vector_bentNormal&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;occlusion&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;roughness&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="p"&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="c1"&gt;//precompute this term: log(10.0f) / log(2.0f)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="c1"&gt;//so we don&amp;#39;t have to use log at runtime&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;LOG10_OVER_LOG2&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mf"&gt;3.32192809488737f&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="c1"&gt;//clamp to 0.01 to avoid edge cases&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;roughness&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;max&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;roughness&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mf"&gt;0.01f&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="c1"&gt;//get unoccluded half-angle cone from AO&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="c1"&gt;//assuming occlusion is cosine weighted&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;cosUnoccludedConeAngle&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;sqrt&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mf"&gt;1.0f&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;occlusion&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;angleUnoccludedCone&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;acos&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;cosUnoccludedConeAngle&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="c1"&gt;//approximate specular lobe cone derived from half-angle roughness&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="c1"&gt;//float cosSpecularConeAngle = exp2((-log(10.0f) / log(2.0f)) * (roughness * roughness)); //original&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;cosSpecularConeAngle&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;exp2&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="n"&gt;LOG10_OVER_LOG2&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;roughness&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;roughness&lt;/span&gt;&lt;span class="p"&gt;));&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;angleSpecularCone&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;acos&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;cosSpecularConeAngle&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="c1"&gt;//angle between bent normal and reflection direction&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;cosBentNormalToReflection&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;dot&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;vector_bentNormal&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;vector_reflectionDirection&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;angleBentNormalToReflection&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;acos&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;cosBentNormalToReflection&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;intersectedArea&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mf"&gt;0.0f&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;angleBentNormalToReflection&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;=&lt;/span&gt; &lt;span class="nb"&gt;max&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;angleUnoccludedCone&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;angleSpecularCone&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="nb"&gt;min&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;angleUnoccludedCone&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;angleSpecularCone&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="c1"&gt;//one cap is completely inside the other&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;intersectedArea&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;TWO_PI&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;TWO_PI&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="nb"&gt;max&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;cosUnoccludedConeAngle&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;cosSpecularConeAngle&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;else&lt;/span&gt; &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;angleBentNormalToReflection&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;=&lt;/span&gt; &lt;span class="n"&gt;angleUnoccludedCone&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;angleSpecularCone&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="c1"&gt;//no intersection&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;intersectedArea&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mf"&gt;0.0f&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;else&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="c1"&gt;//partial overlap&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;angleDifference&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;abs&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;angleUnoccludedCone&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;angleSpecularCone&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;blendRange&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;angleUnoccludedCone&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;angleSpecularCone&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;angleDifference&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;blendFactor&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mf"&gt;1.0f&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="nb"&gt;saturate&lt;/span&gt;&lt;span class="p"&gt;((&lt;/span&gt;&lt;span class="n"&gt;angleBentNormalToReflection&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;angleDifference&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt; &lt;span class="nb"&gt;max&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;blendRange&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mf"&gt;0.0001f&lt;/span&gt;&lt;span class="p"&gt;));&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;intersectedArea&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;smoothstep&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mf"&gt;0.0f&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mf"&gt;1.0f&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;blendFactor&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;intersectedArea&lt;/span&gt; &lt;span class="o"&gt;*=&lt;/span&gt; &lt;span class="n"&gt;TWO_PI&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;TWO_PI&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="nb"&gt;max&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;cosUnoccludedConeAngle&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;cosSpecularConeAngle&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;intersectedArea&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;TWO_PI&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mf"&gt;1.0f&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;cosSpecularConeAngle&lt;/span&gt;&lt;span class="p"&gt;));&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;It&amp;rsquo;s quite a few instructions, there are couple of approximations that do exist &lt;em&gt;(&lt;a class="link" href="https://github.com/Fewes/BakerBoy/blob/master/Assets/BakerBoy/Shaders/Lib/BakerBoyLighting.hlsl#526" target="_blank" rel="noopener"
+&gt;Fewes&lt;/a&gt; or &lt;a class="link" href="https://github.com/Unity-Technologies/Graphics/blob/master/Packages/com.unity.render-pipelines.core/ShaderLibrary/CommonLighting.hlsl#342" target="_blank" rel="noopener"
+&gt;Unity SRP Core&lt;/a&gt;)&lt;/em&gt; but this is all where they mostly stem from.&lt;/p&gt;
+&lt;p&gt;Now contrary to what you might think, this does more than just simply darken the final result. This specular occlusion actually has some interesting and accurate/plausible behaviors.&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/bent-occlusion-viewA.png" width="49%" /&gt;
+&lt;img src="content/bent-occlusion-viewB.png" width="49%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;Specular occlusion varies depending on both the viewing angle, and the surface normal.&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/bent-occlusion-roughA.png" width="49%" /&gt;
+&lt;img src="content/bent-occlusion-roughB.png" width="49%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;Specular occlusion also varies with roughness. Rougher materials will have a smoother occlusion falloff, and smoother materials will have a sharper occlusion falloff.&lt;/p&gt;
+&lt;p&gt;You can see that as the material gets smoother it almost looks like you can see a rough self-reflection of the ring on the object.&lt;/p&gt;
+&lt;p&gt;Granted of course with this technique you won&amp;rsquo;t get perfect self-reflections, but with most real-time graphics techniques this is good and plausible enough. The main goal here was to reduce specular/reflection leaking and this does a pretty good job with it.&lt;/p&gt;
+&lt;h2 id="bent-normals-use-case-diffuse-global-illumination"&gt;&lt;a href="#bent-normals-use-case-diffuse-global-illumination" class="header-anchor"&gt;&lt;/a&gt;Bent Normals Use Case: Diffuse Global Illumination
+&lt;/h2&gt;&lt;p&gt;The secondary application of bent normals, is using them to sample indirect/ambient lighting from global illumination sources.&lt;/p&gt;
+&lt;p&gt;Often in environments, if avaliable you might have probes spread throughout the scene that store the illumination in the form of spherical harmonics. This can be sampled to give you the full lighting at a specific point for an object/material.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt;1
+&lt;/span&gt;&lt;span class="lnt"&gt;2
+&lt;/span&gt;&lt;span class="lnt"&gt;3
+&lt;/span&gt;&lt;span class="lnt"&gt;4
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-HLSL" data-lang="HLSL"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//NOTE: ShadeSH9 is a unity function that samples spherical harmonic coefficents&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//sample environment lighting&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;sphericalHarmonicsColor&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;ShadeSH9&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;float4&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;vector_worldNormalDirection&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;));&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;&lt;img src="https://frostbone25.github.io/p/using-bent-normals-in-object-shaders/content/diffuseA-none.png"
+width="1130"
+height="933"
+srcset="https://frostbone25.github.io/p/using-bent-normals-in-object-shaders/content/diffuseA-none_hu_dfc4c92b4441f561.png 480w, https://frostbone25.github.io/p/using-bent-normals-in-object-shaders/content/diffuseA-none_hu_8e8190c106b1b68b.png 1024w"
+loading="lazy"
+alt="diffuseA-none"
+class="gallery-image"
+data-flex-grow="121"
+data-flex-basis="290px"
+&gt;&lt;/p&gt;
+&lt;p&gt;Not bad, the lighting colors make sense and match the environment decently well. However just like with specular occlusion there are issues.&lt;/p&gt;
+&lt;p&gt;While generally if you have baked &lt;em&gt;(or runtime)&lt;/em&gt; light probes in your scene they usually will factor in occlusion from surrounding geometry and objects, but it won&amp;rsquo;t factor in occlusion from the object itself.&lt;/p&gt;
+&lt;p&gt;This fortunately can be fixed by just simply sampling the ambient occlusion map, authored for this object, and multiplying it with the final probe lighting.&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://frostbone25.github.io/p/using-bent-normals-in-object-shaders/content/diffuseA-occlusion.png"
+width="1130"
+height="933"
+srcset="https://frostbone25.github.io/p/using-bent-normals-in-object-shaders/content/diffuseA-occlusion_hu_6781a45823d8262e.png 480w, https://frostbone25.github.io/p/using-bent-normals-in-object-shaders/content/diffuseA-occlusion_hu_32ffb0f33511bb29.png 1024w"
+loading="lazy"
+alt="diffuseA-occlusion"
+class="gallery-image"
+data-flex-grow="121"
+data-flex-basis="290px"
+&gt;&lt;/p&gt;
+&lt;p&gt;This helps a tremendous amount, the object now is shaded with the lighting probe and it&amp;rsquo;s receiving occlusion from itself thanks to the object&amp;rsquo;s ambient occlusion map.&lt;/p&gt;
+&lt;p&gt;So&amp;hellip; how can bent normals change things here up?&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://frostbone25.github.io/p/using-bent-normals-in-object-shaders/content/diffuseA-bent-occlusion.png"
+width="1130"
+height="933"
+srcset="https://frostbone25.github.io/p/using-bent-normals-in-object-shaders/content/diffuseA-bent-occlusion_hu_58c00828eb80d454.png 480w, https://frostbone25.github.io/p/using-bent-normals-in-object-shaders/content/diffuseA-bent-occlusion_hu_e681da713e3c9fdd.png 1024w"
+loading="lazy"
+alt="diffuseA-bent-occlusion"
+class="gallery-image"
+data-flex-grow="121"
+data-flex-basis="290px"
+&gt;&lt;/p&gt;
+&lt;p&gt;The difference is small, but noticable. To help with that I will put both side by side here&amp;hellip;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/diffuseA-occlusion.png" width="49%" /&gt;
+&lt;img src="content/diffuseA-bent-occlusion.png" width="49%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Left: Irradiance sampled with regular normals and occlusion | Right Irradiance sampled with bent normals and occlusion&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;If we look closely we can actually see some interesting behaviors happening.&lt;/p&gt;
+&lt;p&gt;Some spots now seem to appear like they recieve more occlusion that before, the colors also shifted in some of those areas and actually appear more plausible than before.&lt;/p&gt;
+&lt;p&gt;Lets try looking at the object even closer.&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://frostbone25.github.io/p/using-bent-normals-in-object-shaders/content/diffuseB-occlusion.png"
+width="1130"
+height="933"
+srcset="https://frostbone25.github.io/p/using-bent-normals-in-object-shaders/content/diffuseB-occlusion_hu_dd5c613d56e861ce.png 480w, https://frostbone25.github.io/p/using-bent-normals-in-object-shaders/content/diffuseB-occlusion_hu_bef8299a2d424294.png 1024w"
+loading="lazy"
+alt="diffuseB-occlusion"
+class="gallery-image"
+data-flex-grow="121"
+data-flex-basis="290px"
+&gt;&lt;/p&gt;
+&lt;p&gt;Again starting off with the regular surface normal being shaded with the HDRI probe, with occlusion being applied ontop. It looks good, but lets see how it looks when we use the bent normal to shade rather than the surface normal.&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://frostbone25.github.io/p/using-bent-normals-in-object-shaders/content/diffuseB-bent-occlusion.png"
+width="1130"
+height="933"
+srcset="https://frostbone25.github.io/p/using-bent-normals-in-object-shaders/content/diffuseB-bent-occlusion_hu_5895738876ad447.png 480w, https://frostbone25.github.io/p/using-bent-normals-in-object-shaders/content/diffuseB-bent-occlusion_hu_96bba4068a5e8f5c.png 1024w"
+loading="lazy"
+alt="diffuseB-bent-occlusion"
+class="gallery-image"
+data-flex-grow="121"
+data-flex-basis="290px"
+&gt;&lt;/p&gt;
+&lt;p&gt;Oh wow, that is quite dramatic. It actually looks like light is bouncing around in multiple areas. The occlusion is definetly much improved in dark areas and the shadow colors are more plausible. It&amp;rsquo;s a pretty dramatic transformation.&lt;/p&gt;
+&lt;p&gt;Just for kicks here is how both terms look like without occlusion so you can see the full effects.&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/diffuseB-none.png" width="49%" /&gt;
+&lt;img src="content/diffuseB-bent.png" width="49%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Left: Irradiance sampled with regular normals | Right Irradiance sampled with bent normals&lt;/em&gt;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/diffuseB-occlusion.png" width="49%" /&gt;
+&lt;img src="content/diffuseB-bent-occlusion.png" width="49%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Left: Irradiance sampled with regular normals and occlusion | Right Irradiance sampled with bent normals and occlusion&lt;/em&gt;&lt;/p&gt;
+&lt;h3 id="bent-normal-diffuse-global-illumination-implementation"&gt;&lt;a href="#bent-normal-diffuse-global-illumination-implementation" class="header-anchor"&gt;&lt;/a&gt;Bent Normal Diffuse Global Illumination Implementation
+&lt;/h3&gt;&lt;p&gt;Fortunately implementing this for diffuse is very simple compared to the specular occlusion. In unity for objects, shading with light probes is done as such&amp;hellip;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt;1
+&lt;/span&gt;&lt;span class="lnt"&gt;2
+&lt;/span&gt;&lt;span class="lnt"&gt;3
+&lt;/span&gt;&lt;span class="lnt"&gt;4
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-HLSL" data-lang="HLSL"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//ShadeSH9 is a unity function that samples spherical harmonic coefficents&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//sample environment lighting&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;sphericalHarmonicsColor&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;ShadeSH9&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;float4&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;vector_worldNormalDirection&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;));&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;The only change we need to make, is once we have the bent normal term sampled and calculated in the shader. We just simply plug it in, in place of the normal direction here.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt;1
+&lt;/span&gt;&lt;span class="lnt"&gt;2
+&lt;/span&gt;&lt;span class="lnt"&gt;3
+&lt;/span&gt;&lt;span class="lnt"&gt;4
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-HLSL" data-lang="HLSL"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//ShadeSH9 is a unity function that samples spherical harmonic coefficents&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//sample environment lighting using bent normal&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;sphericalHarmonicsColor&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;ShadeSH9&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;float4&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;vector_worldBentNormalDirection&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;));&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;Just like that, your global illumination probe lighting will sample using the object bent normals!&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/B-no-bent.jpg" width="49%" /&gt;
+&lt;img src="content/B-bent.jpg" width="49%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Left: No bent normals | Right: Bent Normals&lt;/em&gt;&lt;/p&gt;
+&lt;h1 id="references--sources"&gt;&lt;a href="#references--sources" class="header-anchor"&gt;&lt;/a&gt;References / Sources
+&lt;/h1&gt;&lt;p&gt;List of references that helped with my implementations and understanding.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;a class="link" href="https://dev.epicgames.com/documentation/en-us/unreal-engine/bent-normal-maps-in-unreal-engine" target="_blank" rel="noopener"
+&gt;(unreal engine) bent-normal-maps-in-unreal-engine&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;a class="link" href="https://dev.epicgames.com/community/learning/tutorials/9Gr9/unreal-engine-visual-guide-for-ao-and-bentnormal-maps" target="_blank" rel="noopener"
+&gt;(unreal engine) unreal-engine-visual-guide-for-ao-and-bentnormal-maps&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;a class="link" href="https://helpx.adobe.com/substance-3d-designer/substance-compositing-graphs/nodes-reference-for-substance-compositing-graphs/node-library/filters/normal-map/bent-normal.html" target="_blank" rel="noopener"
+&gt;(substance 3d designer) bent-normal&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;a class="link" href="https://github.com/Unity-Technologies/Graphics/blob/master/Packages/com.unity.render-pipelines.core/ShaderLibrary/CommonLighting.hlsl" target="_blank" rel="noopener"
+&gt;(unity) unity-srp-core-common-lighting&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;a class="link" href="https://github.com/Fewes/BakerBoy/blob/master/Assets/BakerBoy/Shaders/Lib/BakerBoyLighting.hlsl" target="_blank" rel="noopener"
+&gt;(fewes) baker-boy&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;em&gt;By: David Matos&lt;/em&gt;&lt;/p&gt;</description></item></channel></rss>

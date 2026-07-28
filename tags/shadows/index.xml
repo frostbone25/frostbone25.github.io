@@ -1,0 +1,1433 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes"?><rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom"><channel><title>Shadows on David Matos</title><link>https://frostbone25.github.io/tags/shadows/</link><description>Recent content in Shadows on David Matos</description><generator>Hugo -- gohugo.io</generator><language>en-us</language><lastBuildDate>Fri, 19 Jun 2026 00:00:00 +0000</lastBuildDate><atom:link href="https://frostbone25.github.io/tags/shadows/index.xml" rel="self" type="application/rss+xml"/><item><title>Final Fantasy 7 Rebirth Contact Shadows Mod</title><link>https://frostbone25.github.io/p/ff7-rebirth-contact-shadows/</link><pubDate>Fri, 19 Jun 2026 00:00:00 +0000</pubDate><guid>https://frostbone25.github.io/p/ff7-rebirth-contact-shadows/</guid><description>&lt;img src="https://frostbone25.github.io/p/ff7-rebirth-contact-shadows/content/contact-shadows-result.jpg" alt="Featured image of post Final Fantasy 7 Rebirth Contact Shadows Mod" /&gt;&lt;p&gt;&lt;em&gt;By: David Matos&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Sharing my personal notes and experimentation with modding contact shadows into one of my most favorite games in recent memory, Final Fantasy 7 Rebirth, into actual run-time gameplay &lt;em&gt;&lt;a class="link" href="#video-preview" &gt;(at the end)&lt;/a&gt;&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;NOTE: This will be updated as time goes on with any new or incorrect information.&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;&lt;img src="https://frostbone25.github.io/p/ff7-rebirth-contact-shadows/content/contact-shadows-result.jpg"
+width="3840"
+height="2160"
+srcset="https://frostbone25.github.io/p/ff7-rebirth-contact-shadows/content/contact-shadows-result_hu_8bac9ce6e40dc3c8.jpg 480w, https://frostbone25.github.io/p/ff7-rebirth-contact-shadows/content/contact-shadows-result_hu_73a1f32f9bf032a.jpg 1024w"
+loading="lazy"
+alt="contact-shadows-result"
+class="gallery-image"
+data-flex-grow="177"
+data-flex-basis="426px"
+&gt;
+&lt;a class="link" href="https://www.square-enix.com/ffvii/en-us/games/rebirth/" target="_blank" rel="noopener"
+&gt;&lt;em&gt;Final Fantasy 7 Rebirth, Square Enix&lt;/em&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;h4 id="table-of-contents"&gt;&lt;a href="#table-of-contents" class="header-anchor"&gt;&lt;/a&gt;Table of Contents
+&lt;/h4&gt;&lt;ul&gt;
+&lt;li&gt;&lt;a class="link" href="#preface" &gt;Preface&lt;/a&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a class="link" href="#context" &gt;Context&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#potential-lighting-solutions-ray-tracing" &gt;Potential Lighting Solutions: Ray Tracing?&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#potential-lighting-solutions-increase-shadow-map-resolution" &gt;Potential Lighting Solutions: Increase Shadow Map Resolution?&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#potential-lighting-solutions-increase-shadow-map-cascades" &gt;Potential Lighting Solutions: Increase Shadow Map Cascades?&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#potential-lighting-solutions-shadow-map-caching" &gt;Potential Lighting Solutions: Shadow Map Caching?&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#potential-lighting-solutions-contact-shadows" &gt;Potential Lighting Solutions: Contact Shadows&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#brief-game-render-breakdown" &gt;Brief Game Render Breakdown&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#implementation" &gt;Implementation&lt;/a&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a class="link" href="#getting-baseline-timings" &gt;Getting Baseline Timings&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#micro-shadows" &gt;Micro Shadows&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#contact-shadows" &gt;Contact Shadows&lt;/a&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;a class="link" href="#limitations" &gt;Limitations&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#getting-good-results" &gt;Getting Good Results&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#naive-contact-shadows-world-space" &gt;Naive Contact Shadows (World Space)&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#optimization-reduce-sample-counts" &gt;Optimization: Reduce Sample Counts&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#quality-boost-introduce-noise-blue-noise" &gt;Quality Boost: Introduce Noise (Blue Noise)&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#optimization-switching-to-interleaved-gradient-noise-ign" &gt;Optimization: Switching to Interleaved Gradient Noise (IGN)&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#optimization-clip-space" &gt;Optimization: Clip Space&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#optimization-early-sky-out" &gt;Optimization: Early Sky Out&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#optimization-further-sample-reduction" &gt;Optimization: Further Sample Reduction&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#bonus-checkerboard-rendering-optimization" &gt;Bonus: Checkerboard Rendering Optimization&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#bonus-dual-depth-sampling" &gt;Bonus: Dual Depth Sampling&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#bonus-depth-point-sampling" &gt;Bonus: Depth Point Sampling&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#final-results" &gt;Final Results&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#video-preview" &gt;Video Preview&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#timings-on-1920x1080-and-3840x2160" &gt;Timings on 1920x1080 and 3840x2160&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a class="link" href="#references--sources" &gt;References / Sources&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h2 id="preface"&gt;&lt;a href="#preface" class="header-anchor"&gt;&lt;/a&gt;Preface
+&lt;/h2&gt;&lt;h4 id="context"&gt;&lt;a href="#context" class="header-anchor"&gt;&lt;/a&gt;Context
+&lt;/h4&gt;&lt;p&gt;After waiting a little over a year to play a sequel to one of my favorite franchises on PC in 2024, I finally got to play the game. I was taken a back by the sheer amount of content, and variety that was in the game. The story was fantastic, the gameplay was stellar, full of depth, and it was a genuinely awesome experience that was well worth the wait&amp;hellip;&lt;/p&gt;
+&lt;p&gt;But&amp;hellip; the back of my mind, there is a little graphics gremlin that was nagging me during some segments of the game. I couldn&amp;rsquo;t hold him at bay so unfortunately I let him speak&amp;hellip; and his words led to some realizations about the game&amp;rsquo;s rendering.&lt;/p&gt;
+&lt;p&gt;Rebirth unfortunately has some short-comings in regards to it&amp;rsquo;s lighting quality during gameplay. Now during cutscenes or other more curated segments the game looks great, asset quality and art direction is fantastic. However in some areas during gameplay, it&amp;rsquo;s very clear that there are cutbacks that were done to the lighting for performance sake. Especially when you consider how the previous game in the series, Final Fantasy 7 Remake, looked in similar areas.&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/ff7remakeNight.jpg" width="49%" /&gt;
+&lt;img src="content/ff7remakeDay.jpg" width="49%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;a class="link" href="https://www.square-enix.com/ffvii/en-us/games/remake/" target="_blank" rel="noopener"
+&gt;&lt;em&gt;Final Fantasy 7 Remake Intergrade, Square Enix&lt;/em&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/ff7rebirthDark.jpg" width="49%" /&gt;
+&lt;img src="content/ff7rebirthDay.jpg" width="49%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;a class="link" href="https://www.square-enix.com/ffvii/en-us/games/rebirth/" target="_blank" rel="noopener"
+&gt;&lt;em&gt;Final Fantasy 7 Rebirth, Square Enix&lt;/em&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;When you compare similar areas to Rebirth &lt;em&gt;(ignoring art direction differences)&lt;/em&gt;, the generalized cutbacks made become quite apparent. From Remake to Rebirth one of the biggest switches they did was to go from pre-computed lightmaps to pre-computed light probes.&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/unity-lightmap.png" width="49%" /&gt;
+&lt;img src="content/unity-probe.png" width="49%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;(Unity Example) Left Side: Pre-Computed Lightmaps | Right Side: Pre-Computed Probe Volumes&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;From a practicality standpoint, this is the right call considering the size of Rebirth&amp;rsquo;s world, and even I would have done the same &lt;em&gt;(although one could argue that games like &lt;a class="link" href="https://80.lv/articles/horizon-zero-dawn-interview-with-the-team" target="_blank" rel="noopener"
+&gt;Horizon Zero Dawn&lt;/a&gt; managed it)&lt;/em&gt;. From a visuals standpoint the quality of global illumination especially in ambient areas will suffer the most because of that, as going from pre-computed lightmaps to pre-computed light probes means you lose out on alot of spatial resolution, so things because very blurry and blobby like you see above.&lt;/p&gt;
+&lt;p&gt;Now given the constraints, you really can&amp;rsquo;t do a whole lot without resorting to some more complex rasterization effects or elaborate GI setups to get half decent results. Doing all of that would definetly eat into your frametime budget more than you would probably want for a game that is centered around fast action. So&amp;hellip; honestly for the most part I can forgive the quality of the global illumination that we ended up with. Now the direct lighting on the other hand, I think there are some things we can still do that the game does not.&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Side Note: Just for the record I know it&amp;rsquo;s not impossible to make such a open world look great in ambient areas. Games like &lt;a class="link" href="https://www.ubisoft.com/en-us/game/far-cry/far-cry-3" target="_blank" rel="noopener"
+&gt;Far Cry 3&lt;/a&gt;, &lt;a class="link" href="https://www.ubisoft.com/en-us/game/assassins-creed/unity" target="_blank" rel="noopener"
+&gt;Assassin&amp;rsquo;s Creed Unity&lt;/a&gt;, and even &lt;a class="link" href="https://www.ubisoft.com/en-us/game/the-division" target="_blank" rel="noopener"
+&gt;The Divsion&lt;/a&gt; managed to get very impressive results in their time with tigher constraints than today&amp;rsquo;s hardware&amp;hellip; but those are different teams, with different technology bases, different production pipelines, different timelines, and constraints.&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Let&amp;rsquo;s be reasonable here&amp;hellip; let&amp;rsquo;s assume that we are under very tight constraints that were imposed on the FF7R team &lt;em&gt;(prioritizing high framerate and fast action with good clarity)&lt;/em&gt;&amp;hellip; so within these constraints, what can we do to improve the quality of our game lighting? &lt;em&gt;(the direct lighting, not global illumination)&lt;/em&gt;&lt;/p&gt;
+&lt;h4 id="potential-lighting-solutions-ray-tracing"&gt;&lt;a href="#potential-lighting-solutions-ray-tracing" class="header-anchor"&gt;&lt;/a&gt;Potential Lighting Solutions: Ray Tracing?
+&lt;/h4&gt;&lt;p&gt;I want to knock this one off first because it&amp;rsquo;s usually the one that is on everyones minds&amp;hellip; generally Ray-Tracing is amazing and when done well can solve so many lighting and production problems in one go, but even with today&amp;rsquo;s hardware it is still incredibly expensive and has it&amp;rsquo;s own set of problems that need solving before you get something usable.&lt;/p&gt;
+&lt;p&gt;First off you&amp;rsquo;d need to have an acceleration structure that essentially stores all of the triangles within your scene, but Rebirth is a huge open world so that means billions of triangles that need to be stored and held in memory. Rebuilding that every frame is out of the question unless you have some crazy cascade like scheme. Precomputation would be a valid option but then you&amp;rsquo;d have to hold all of that data in memory, so you&amp;rsquo;d have deal with it in smaller chunks. All of that even with precomputation would most certainly introduce a lot of overhead to just managing all of that data, and also dealing with dynamic meshes into the mix which is another problem.&lt;/p&gt;
+&lt;p&gt;Ontop of that, once you have the acceleration structure you still have the issue of needing to calculate your lighting. For most path-traced games &lt;em&gt;(Cyberpunk and RE9 come to mind)&lt;/em&gt; you can only manage a small amount of rays for every pixel for a decent playable frame rate, sometimes maybe even a ray for every 1/2th a pixel or 1/4th! With a small amount of rays for every pixel that also means lots of noise! That noise needs to be piped through many layers of filtering &lt;em&gt;(Temporal Filtering, ReSTIR, ATrous Wavelet, etc.)&lt;/em&gt; just to get something half decent at the end that often is not sharp enough to resolve good detail in motion. To add insult to injury that is usually just for diffuse shading, for specular shading it needs it&amp;rsquo;s own pipeline and set of filters/solutions which just piles on more costs and problems.&lt;/p&gt;
+&lt;p&gt;There are different techniques for shading with Ray-Tracing, and I could go on&amp;hellip; but I think you get the picture. That isn&amp;rsquo;t to say I&amp;rsquo;m not a fan of Ray-Tracing, I am but we need to be realistic and reasonable here given the constraints, and unfortunately Ray-Tracing is a no go because there are just too many problems to solve with it&amp;hellip; So what else can we do?&lt;/p&gt;
+&lt;h4 id="potential-lighting-solutions-increase-shadow-map-resolution"&gt;&lt;a href="#potential-lighting-solutions-increase-shadow-map-resolution" class="header-anchor"&gt;&lt;/a&gt;Potential Lighting Solutions: Increase Shadow Map Resolution?
+&lt;/h4&gt;&lt;p&gt;The first and obvious thing would be to bump the resolution of the Directional Light Shadowmap. In the case of FF7 Rebirth, using something like &lt;a class="link" href="https://www.nexusmods.com/finalfantasy7rebirth/mods/4?tab=description" target="_blank" rel="noopener"
+&gt;FFVIIHook&lt;/a&gt; can let you do this even at runtime. Most other UE-based games are similar to a degree either with a console or .ini tweaks.&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/unity-shadow-low.png" width="49%" /&gt;
+&lt;img src="content/unity-shadow-high.png" width="49%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Unity Example: Left is Hard Shadows with high distance, right side is the same but doubled resolution.&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;It&amp;rsquo;s simple, effective&amp;hellip; but costly! There are actually multiple caveat&amp;rsquo;s with doing this&amp;hellip;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Increasing the resolution means more memory for the shadowmap, and more pixel invocations&amp;hellip;&lt;/li&gt;
+&lt;li&gt;Shadowmaps can only resolve so much detail across an area, and this scales with distance.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Rebirth is an open world&amp;hellip; so we need to be able to see shadows really far away, that means shadow distances need to be high, but that also means less resolution with more distance! Again we could try bumping the resolution to compensate but we can hit VRAM/Memory problems as we can only hold so much data. This only works up to a certain point but due to the scale of the world this is usually not enough.&lt;/p&gt;
+&lt;p&gt;Well that sucks&amp;hellip; what else can we do?&lt;/p&gt;
+&lt;h4 id="potential-lighting-solutions-increase-shadow-map-cascades"&gt;&lt;a href="#potential-lighting-solutions-increase-shadow-map-cascades" class="header-anchor"&gt;&lt;/a&gt;Potential Lighting Solutions: Increase Shadow Map Cascades?
+&lt;/h4&gt;&lt;p&gt;If we can&amp;rsquo;t cover the entire world with one large single shadow map texture&amp;hellip; why not cover it with multiple shadow maps textures instead?&lt;/p&gt;
+&lt;p&gt;This is effectively what &lt;a class="link" href="https://dev.epicgames.com/documentation/unreal-engine/use-cascaded-shadows?application_version=4.27" target="_blank" rel="noopener"
+&gt;Cascaded Shadow Maps (CSM)&lt;/a&gt; are, and fortunately Rebirth is already using this &lt;em&gt;(along with most of the industry, it&amp;rsquo;s very common)&lt;/em&gt;. It works like this&amp;hellip;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Cascade 0 (1024x1024): Render the scene depth 100 units across from perspective of directional light&lt;/li&gt;
+&lt;li&gt;Cascade 1 (1024x1024): Render the scene depth 250 units across from perspective of directional light&lt;/li&gt;
+&lt;li&gt;Cascade 2 (1024x1024): Render the scene depth 500 units across from perspective of directional light&lt;/li&gt;
+&lt;li&gt;Cascade 3 (1024x1024): Render the scene depth 1000 units across from perspective of directional light&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/unity-shadow-csm.png" width="49%" /&gt;
+&lt;img src="content/unity-shadow-csm-visual.png" width="49%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Unity Example: Left side is 4 shadowmap cascades, same resolution as before but note how much better looking shadows close to the camera are. The Right visualizes the 4 cascades with colors.&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;The more cascades we do, the better coverage we get of our scene, and because each cascade is at a different scale we can allocate more shadowmap pixels for certain areas closer to the player camera. With some manual fine tuning of the distances for each cascade we can get some exceptionally good looking results with this. Awesome!&lt;/p&gt;
+&lt;p&gt;Except&amp;hellip; there are problems with this technique as well.&lt;/p&gt;
+&lt;p&gt;For each shadowmap cascade, you need to re-render the scene again &lt;em&gt;(because it&amp;rsquo;s just another shadowmap)&lt;/em&gt;. That means for 4 shadow cascades &lt;em&gt;(which is usually the standard at most)&lt;/em&gt; you need to re-render the scene 4 different times again! That is alot of draw calls that will eventually tank your performance. Even worse, the greater the scene complexity gets &lt;em&gt;(i.e. the bigger the world / more objects on screen to draw)&lt;/em&gt; the heavier this gets!&lt;/p&gt;
+&lt;p&gt;Because of this, Rebirth sticks to 2 just shadow cascades. 1 cascade fairly close to the camera, and the other a reasonable distance away. The rest just remains unshadowed &lt;em&gt;(Spoiler, handled with static shadowmaps, which I will get into now&amp;hellip;)&lt;/em&gt;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/directionalshadowmap.jpg" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;FF7 Rebirth&amp;rsquo;s two cascaded directional light shadowmap.&lt;/em&gt;&lt;/p&gt;
+&lt;h4 id="potential-lighting-solutions-shadow-map-caching"&gt;&lt;a href="#potential-lighting-solutions-shadow-map-caching" class="header-anchor"&gt;&lt;/a&gt;Potential Lighting Solutions: Shadow Map Caching?
+&lt;/h4&gt;&lt;p&gt;&lt;em&gt;(NOTE: I believe the game is already using this, though I haven&amp;rsquo;t been able to verify just yet at the moment)&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Shadowmap Caching? Usually shadowmaps are rendered every frame, but turns out we actually don&amp;rsquo;t have to do that!&lt;/p&gt;
+&lt;p&gt;Again the idea is simple, for certain lights or maybe even cascades we can actually update them at a slower rate. This gives us performance gains as we don&amp;rsquo;t have to re-render them every frame, great! We can even take this idea further and &amp;ldquo;pre-compute&amp;rdquo; a shadowmap that we can just simply pull whenever we want, and not have to redraw the scene at all. That sounds good!&lt;/p&gt;
+&lt;p&gt;Except&amp;hellip; just like shadowmaps you still have to deal with the problem of memory. Holding too many shadowmap textures in VRAM/memory can lead to problems, and again with the scale of Rebirth&amp;rsquo;s world there wouldn&amp;rsquo;t be enough to reasonably hold all of the needed data for the quality level we&amp;rsquo;d want to hit. Don&amp;rsquo;t forget also at the end of the day they are still shadowmaps, so you have to deal with the fact that you can only resolve so much detail over distance depending on the resolution they are set at.&lt;/p&gt;
+&lt;p&gt;In addition, rendering shadows at slower rates can introduce new problems. Moving objects rendered in a delayed shadowmap can create &amp;ldquo;false&amp;rdquo; occlusion issues, and visual problems where shadows will appear to &amp;ldquo;stutter&amp;rdquo; with sparse updates update.&lt;/p&gt;
+&lt;p&gt;Well darn&amp;hellip; things are looking grim&amp;hellip; is there anything else we can do?&lt;/p&gt;
+&lt;h4 id="potential-lighting-solutions-contact-shadows"&gt;&lt;a href="#potential-lighting-solutions-contact-shadows" class="header-anchor"&gt;&lt;/a&gt;Potential Lighting Solutions: Contact Shadows
+&lt;/h4&gt;&lt;p&gt;Instead of utilizing shadow maps, we can calculate shadows somewhat accurately just by using the camera depth buffer and a given light direction. If games can calculate screen-space ambient occlusion with half decent results along with other similar techniques, then we should be able to calculate shadows with screen-space information as well!&lt;/p&gt;
+&lt;p&gt;Now we get into the whole reason why this article exists, turns out there is a technique here thats been around for a while and has been used by many games in the industry. &lt;a class="link" href="https://panoskarabelas.com/posts/screen_space_shadows/" target="_blank" rel="noopener"
+&gt;Screen-Space Contact Shadows!&lt;/a&gt;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/unity-no-contact.png" width="49%" /&gt;
+&lt;img src="content/unity-contact.png" width="49%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Unity Example: Left side is soft shadows only. Right side adds screen-space contact shadows onto the soft shadows during light shading.&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;The biggest win of this technique is that there is no need for re-drawing the scene for a shadowmap, and dealing with those kinds of issues. All we need is a depth buffer and and a light direction &lt;em&gt;(or position)&lt;/em&gt;, and during shading time for drawing a light we just simply trace shadows in screen space at the same time. Requires minimal setup, costs roughly as much as SSAO, and scales far better than most of the other rasterization techniques &lt;em&gt;(that I&amp;rsquo;ve seen anyway)&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Now, just like the lighting solutions before, there are issues with this technique as well, but considering the context that we are in this effect is actually perfectly suited for this kind of situation! Rebirth is built on UE4, and it already has quite the feature set when it comes to graphical effects. Among them are &lt;a class="link" href="https://dev.epicgames.com/documentation/unreal-engine/contact-shadows-in-unreal-engine?lang=en-US" target="_blank" rel="noopener"
+&gt;contact shadows that are already built-in to the engine by default!&lt;/a&gt;&lt;/p&gt;
+&lt;p&gt;But heres the real head-scratcher&amp;hellip; Rebirth does not use them at all? Unfortunately with modding using &lt;a class="link" href="https://www.nexusmods.com/finalfantasy7rebirth/mods/4?tab=description" target="_blank" rel="noopener"
+&gt;FFVIIHook&lt;/a&gt; and many commands it appears that many of those graphical features including contact shadows have been stripped out. Why?&lt;/p&gt;
+&lt;p&gt;This single problem has led me down a spiral &lt;em&gt;(hence this mod and article :D)&lt;/em&gt; and on a journey to be able to see and play the game with this effect integrated. So&amp;hellip; let&amp;rsquo;s get into it!&lt;/p&gt;
+&lt;h2 id="brief-game-render-breakdown"&gt;&lt;a href="#brief-game-render-breakdown" class="header-anchor"&gt;&lt;/a&gt;Brief Game Render Breakdown
+&lt;/h2&gt;&lt;p&gt;Here is a breakdown of how a frame is rendered in Rebirth using &lt;a class="link" href="https://renderdoc.org/" target="_blank" rel="noopener"
+&gt;RenderDoc&lt;/a&gt; for this whole process. Unfortunately I am not &lt;a class="link" href="https://mamoniem.com/author/muhammad/" target="_blank" rel="noopener"
+&gt;Muhammad&lt;/a&gt; or &lt;a class="link" href="https://www.adriancourreges.com/blog/2020/12/29/graphics-studies-compilation/" target="_blank" rel="noopener"
+&gt;Adrian Courreges&lt;/a&gt; so this will be a very brief breakdown of Rebirth&amp;rsquo;s rendering. &lt;em&gt;(And that would veer the focus of this article off too far)&lt;/em&gt;. This should be just enough to give you some idea of what&amp;rsquo;s going on under the hood.&lt;/p&gt;
+&lt;p&gt;Both FF7 Remake and FF7 Rebirth are both built on UE4 &lt;em&gt;(a modified variant of the engine)&lt;/em&gt; which uses a &lt;a class="link" href="https://en.wikipedia.org/wiki/Deferred_shading" target="_blank" rel="noopener"
+&gt;Deferred Renderer Pipeline&lt;/a&gt;. In english this means that general shading is done later in rendering process near the end. Before shading we draw the scene multiple times into multiple different graphics buffers &lt;em&gt;(GBuffers)&lt;/em&gt; that will hold various kinds of data that can then be used later to do our actual shading. &lt;em&gt;Hence the name deferred, the shading is deferred to a later point in time.&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;In the case of rebirth, the renderer draws to &lt;strong&gt;7 different GBuffers + Depth&lt;/strong&gt;&amp;hellip;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/gbuffer-rt0.jpg" width="49%" /&gt;
+&lt;img src="content/gbuffer-rt1.jpg" width="49%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;&lt;strong&gt;Left Side:&lt;/strong&gt;&lt;/em&gt; &lt;em&gt;RT0 | R16G16B16A16_FLOAT | Full black except for alpha channel, I&amp;rsquo;m not sure what this is used for yet&amp;hellip;&lt;/em&gt;
+&lt;em&gt;&lt;strong&gt;Right Side:&lt;/strong&gt;&lt;/em&gt; &lt;em&gt;RT1 | R10G10B10A2_UNORM | WorldNormal (RGB), SelectiveOutputMask (A)&lt;/em&gt;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/gbuffer-rt2.jpg" width="49%" /&gt;
+&lt;img src="content/gbuffer-rt3.jpg" width="49%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;&lt;strong&gt;Left Side:&lt;/strong&gt;&lt;/em&gt; &lt;em&gt;RT2 | B8G8R8A8_TYPELESS | Metallic (R) Specular (G) Roughness (B) ShadingModelID (A)&lt;/em&gt;
+&lt;em&gt;&lt;strong&gt;Right Side:&lt;/strong&gt;&lt;/em&gt; &lt;em&gt;RT3 | B8G8R8A8_TYPELESS | BaseColor (RGB) GBufferAO (A)&lt;/em&gt;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/gbuffer-rt4.jpg" width="49%" /&gt;
+&lt;img src="content/gbuffer-rt5.jpg" width="49%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;&lt;strong&gt;Left Side:&lt;/strong&gt;&lt;/em&gt; &lt;em&gt;RT4 | B8G8R8A8_TYPELESS | Custom Data, This is quite multi-purpose for different parts of the image depending on the ShadingModelID.&lt;/em&gt;
+&lt;em&gt;&lt;strong&gt;Right Side:&lt;/strong&gt;&lt;/em&gt; &lt;em&gt;RT5 | B8G8R8A8_TYPELESS | WorldNormals repeated again, not sure what the purpose of this is.&lt;/em&gt;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/gbuffer-rt6.jpg" width="49%" /&gt;
+&lt;img src="content/gbuffer-depth.jpg" width="49%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;&lt;strong&gt;Left Side:&lt;/strong&gt;&lt;/em&gt; &lt;em&gt;RT6 | R16G16_UNorm | Velocity Buffer&lt;/em&gt;
+&lt;em&gt;&lt;strong&gt;Right Side:&lt;/strong&gt;&lt;/em&gt; &lt;em&gt;Depth | D32S8_TYPELESS | Scene Depth&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Just to also show you the rendering timeline&amp;hellip;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/render-doc-timeline.png" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;&lt;a class="link" href="https://renderdoc.org/" target="_blank" rel="noopener"
+&gt;RenderDoc&lt;/a&gt; Timeline&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;This occurs almost near the end of the pipeline &lt;em&gt;(the flag on the timeline is where the Deferred GBuffer finishes drawing)&lt;/em&gt;. Rebirth has a vast amount of events up before the actual GBuffer drawing which I won&amp;rsquo;t go into, but the notable ones are&amp;hellip;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/hzb-mip0.jpg" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Hierarchical-Z Buffer (HZB) Occlusion: Rendering the world to determine what objects to occlude later (with mips).&lt;/em&gt;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/directionalshadowmap.jpg" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Shadow Map Draws: Rendering of the world through the perspective of some lights for shadowmaps (In this case the sun/directional light)&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Among other miscellaneous tasks necessary for the game to render a frame that you will eventually see, but by this point after the GBuffer drawing we essentially have almost everything we need to start doing actual shading with the game.&lt;/p&gt;
+&lt;p&gt;Fast forward just a few small rendering events and we stumble upon our Directional Light &lt;em&gt;(sunlight)&lt;/em&gt; draw pass, which will shade the scene with the sunlight! This is what we will be modifying&amp;hellip;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/base-naked.jpg" width="100%" /&gt;
+&lt;/p&gt;
+&lt;h2 id="implementation"&gt;&lt;a href="#implementation" class="header-anchor"&gt;&lt;/a&gt;Implementation
+&lt;/h2&gt;&lt;h3 id="getting-baseline-timings"&gt;&lt;a href="#getting-baseline-timings" class="header-anchor"&gt;&lt;/a&gt;Getting Baseline Timings
+&lt;/h3&gt;&lt;p&gt;Going forward we will be using &lt;a class="link" href="https://renderdoc.org/" target="_blank" rel="noopener"
+&gt;RenderDoc&lt;/a&gt; not only for timings, but &lt;a class="link" href="https://renderdoc.org/" target="_blank" rel="noopener"
+&gt;RenderDoc&lt;/a&gt; also allows us to modify shaders and be able to replay them in the pipeline to see how they work &lt;em&gt;(not during runtime though)&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Now just before we get into the implementation of these effects we need to get baseline timings before we start adding things that could slow us down later. These baselines will help keep ourselves in check later so we don&amp;rsquo;t build something that winds up being too expensive.&lt;/p&gt;
+&lt;p&gt;As mentioned earlier &lt;a class="link" href="https://renderdoc.org/" target="_blank" rel="noopener"
+&gt;RenderDoc&lt;/a&gt; has a very useful feature where for a given capture, you can actually replay it and get timing values from it to see generally how much time each induvidual draw or operation takes. Granted the timings will not match the original game/application 1:1. You have to run it multiple times to get a good average, and even then it will be off by some factors &lt;em&gt;(RenderDoc is not intended to be profiler)&lt;/em&gt;, but for the most part it&amp;rsquo;s relatively accurate and will show you if one or more draws are more expensive than the other which is what we want to know!&lt;/p&gt;
+&lt;p&gt;It&amp;rsquo;s important do this so we can orient ourselves later to check how expensive things have gotten. To start let&amp;rsquo;s look at the total frame time of the original game capture here. This is on an RTX 3080, at native 3840x2160, and the settings of the game are all maxed out.&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/timing-entire-frame.png" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;Roughly &lt;code&gt;34.5ms&lt;/code&gt;. To help orient ourselves with the timing values, heres a quick reference&amp;hellip;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;30 FPS&lt;/strong&gt; Frame-Time Budget: 33.33ms&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;60 FPS&lt;/strong&gt; Frame-Time Budget: 16.67ms&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;120 FPS&lt;/strong&gt; Frame-Time Budget: 8.33ms&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;For the timing value that we have, it&amp;rsquo;s effectively 30 FPS, which is fairly accurate given that I played the game at &lt;strong&gt;native 4K&lt;/strong&gt; &lt;em&gt;(No DLSS, upscaling, or dynamic resolution)&lt;/em&gt; and maxed out the visual settings. Sometimes during certain areas the frame timings will increase or decrease depending on the complexity of the scene. Now lets check the draw call that is responsible for shading the scene with sunlight.&lt;/p&gt;
+&lt;p&gt;Here is the original timings for the Directional Pixel Light Shader that the game is using within &lt;a class="link" href="https://renderdoc.org/" target="_blank" rel="noopener"
+&gt;RenderDoc&lt;/a&gt;&amp;hellip;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/timing-original-shader.png" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;General timings for it are roughly &lt;code&gt;0.38ms - 0.40ms&lt;/code&gt;, this is an important baseline to keep in mind so we can check if we are slower, or faster than the original shader before we move forward.&lt;/p&gt;
+&lt;p&gt;But we have a curveball here&amp;hellip; that is a compiled shader. I cannot accurately decompile it into a shader that I can edit and make changes to as I don&amp;rsquo;t have the original source code, so I&amp;rsquo;ll have to reverse engineer the shader. Fortunately Unreal shader source files are accessible for UE4, and I had the assumption that most of the shading code was similar &lt;em&gt;(Spoiler: I was mostly right)&lt;/em&gt;, so with some trial and error I managed to mostly rebuild the Deferred Directional Pixel Light shader fairly accurately.&lt;/p&gt;
+&lt;p&gt;It&amp;rsquo;s not a perfect 1:1 match as clearly there were some modifications that have been done for the game. I&amp;rsquo;ve done my best to match Rebirth game shading as close as possible, and for the most part it&amp;rsquo;s really close visually minus some specularity differences that I have yet to fully iron out. The timings for the reverse engineered shader are as follows&amp;hellip;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/timing-base.png" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;Roughly &lt;code&gt;0.208ms - 0.21ms&lt;/code&gt;, that&amp;rsquo;s definetly quite a bit faster than the original.&lt;/p&gt;
+&lt;p&gt;The likely reason for this is that I&amp;rsquo;m probably missing some shading terms that the original shader is doing that I haven&amp;rsquo;t run into yet. Despite that though the shader is almost identical to the in-game one visually but for sanity and simplicity sake let&amp;rsquo;s not dwell too hard on this.&lt;/p&gt;
+&lt;p&gt;Importantly, we have an actual baseline timing now which is &lt;code&gt;0.2ms&lt;/code&gt;. When we start adding more and more effects we should see the timing values rise, and we&amp;rsquo;ll know how far off we are from baseline. Ideally for most post effects &lt;em&gt;(or draw calls)&lt;/em&gt; we want to be as far below 1 milisecond as we can. The smaller the timing value, the better our performance by the end will be. Less is always better!&lt;/p&gt;
+&lt;p&gt;So&amp;hellip; with our baseline of roughly &lt;code&gt;0.2ms&lt;/code&gt;, let&amp;rsquo;s get to work!&lt;/p&gt;
+&lt;h3 id="micro-shadows"&gt;&lt;a href="#micro-shadows" class="header-anchor"&gt;&lt;/a&gt;Micro Shadows
+&lt;/h3&gt;&lt;p&gt;This was the first thing that I wanted to try, as it&amp;rsquo;s a very simple and cheap &lt;em&gt;(but very effective)&lt;/em&gt; technique that was introduced in &lt;a class="link" href="https://advances.realtimerendering.com/other/2016/naughty_dog/" target="_blank" rel="noopener"
+&gt;Uncharted 4&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;&lt;a class="link" href="https://advances.realtimerendering.com/other/2016/naughty_dog/" target="_blank" rel="noopener"
+&gt;Micro Shadows&lt;/a&gt; are a very low cost way of adding detail to a surface or object in direct light by simulating micro shadows using occlusion maps already authored for assets/materials.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt;1
+&lt;/span&gt;&lt;span class="lnt"&gt;2
+&lt;/span&gt;&lt;span class="lnt"&gt;3
+&lt;/span&gt;&lt;span class="lnt"&gt;4
+&lt;/span&gt;&lt;span class="lnt"&gt;5
+&lt;/span&gt;&lt;span class="lnt"&gt;6
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-HLSL" data-lang="HLSL"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;ComputeMicroShadowing&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;AO&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;NdotL&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;opacity&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="p"&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;aperture&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mf"&gt;2.0&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;AO&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;AO&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;microshadow&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;saturate&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;NdotL&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;aperture&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="mf"&gt;1.0&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="nb"&gt;lerp&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mf"&gt;1.0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;microshadow&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;opacity&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;To apply it to our shading all we need to do is just call the function, pass in the necessary terms and multiply it against our final light. Thanks to the GBuffers we get easy access to these occlusion maps already so we just simply plug it in to the function along with main light dot product for shading to modulate it.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt; 1
+&lt;/span&gt;&lt;span class="lnt"&gt; 2
+&lt;/span&gt;&lt;span class="lnt"&gt; 3
+&lt;/span&gt;&lt;span class="lnt"&gt; 4
+&lt;/span&gt;&lt;span class="lnt"&gt; 5
+&lt;/span&gt;&lt;span class="lnt"&gt; 6
+&lt;/span&gt;&lt;span class="lnt"&gt; 7
+&lt;/span&gt;&lt;span class="lnt"&gt; 8
+&lt;/span&gt;&lt;span class="lnt"&gt; 9
+&lt;/span&gt;&lt;span class="lnt"&gt;10
+&lt;/span&gt;&lt;span class="lnt"&gt;11
+&lt;/span&gt;&lt;span class="lnt"&gt;12
+&lt;/span&gt;&lt;span class="lnt"&gt;13
+&lt;/span&gt;&lt;span class="lnt"&gt;14
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-HLSL" data-lang="HLSL"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//pseudo code!&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//lightAttenuation will factor in other light terms, like shadows&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//if it&amp;#39;s a local light it should also factor in distance falloffs and whatnot&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//...&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="n"&gt;lightAttenuation&lt;/span&gt; &lt;span class="o"&gt;*=&lt;/span&gt; &lt;span class="n"&gt;ComputeMicroShadowing&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;GBufferData&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;GBufferAO&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;NdotL&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mf"&gt;1.0f&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//add diffuse and specular&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="n"&gt;finalColor&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="n"&gt;diffuseLight&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="n"&gt;finalColor&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="n"&gt;specularLight&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//apply attenuation&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//NOTE: theroetically the micro shadowing and other shadowing terms we do should always be affecting both the diffuse and specular.&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="n"&gt;finalColor&lt;/span&gt; &lt;span class="o"&gt;*=&lt;/span&gt; &lt;span class="n"&gt;lightAttenuation&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;Now let&amp;rsquo;s see how it looks in the game, looking at the original first then with microshadows&amp;hellip;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/base.jpg" width="49%" /&gt;
+&lt;img src="content/micro-shadows.jpg" width="49%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Left: No Micro Shadows | Right: With Micro Shadows&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;You will definetly will need to flip between them quickly to see it&amp;rsquo;s effects on the final rendered image, but to help with that I will show the micro-shadow effect in pure isolation.&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/micro-shadows-only.jpg" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;This is what Micro Shadows is adding. The beauty of the technique is in it&amp;rsquo;s simplicity. It is a bit of a hack, but it&amp;rsquo;s physically plausible and the result&amp;rsquo;s are quite effective at adding tons detail just by leveraging the authored material ambient occlusion maps. Holes, crevices, and other surface/object features that are in the occlusion map come out more.&lt;/p&gt;
+&lt;p&gt;Checking our timings&amp;hellip;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/timing-micro-shadow.png" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;Can&amp;rsquo;t pinpoint the exact values due to some noise with RenderDoc replay timings, but generally it&amp;rsquo;s the exact same &lt;code&gt;0.208ms - 0.21ms&lt;/code&gt; range just like before. Like I said, super cheap, and it certainly helped a bit&amp;hellip; but I&amp;rsquo;m not fully satisfied yet!&lt;/p&gt;
+&lt;p&gt;I want to go even further and beyond!&lt;/p&gt;
+&lt;h3 id="contact-shadows"&gt;&lt;a href="#contact-shadows" class="header-anchor"&gt;&lt;/a&gt;Contact Shadows
+&lt;/h3&gt;&lt;p&gt;Now just before we get into the meat of things, a brief explanation on what Contact Shadows actually are&amp;hellip;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/contact_shadows_screen_space.svg" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;strong&gt;Contact Shadows&lt;/strong&gt; is a screen-space shadowing technique that works by raymarching from a shaded point toward a light source and testing whether the ray intersects scene geometry reconstructed from the depth buffer.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;If we are hitting scene geometry on our way to the light, that point is occluded &lt;em&gt;(in-shadow)&lt;/em&gt;&lt;/li&gt;
+&lt;li&gt;If the ray reaches the light without hitting geometry, the point receives direct lighting.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;Now unlike traditional shadow maps, Contact Shadows operate entirely in screen-space and use information already available in the depth buffer. This makes them relatively inexpensive while still providing small-scale shadow detail. Ok&amp;hellip; sounds plausible enough, but there are drawbacks with this technique&amp;hellip;&lt;/p&gt;
+&lt;h4 id="limitations"&gt;&lt;a href="#limitations" class="header-anchor"&gt;&lt;/a&gt;Limitations
+&lt;/h4&gt;&lt;p&gt;&lt;strong&gt;We only trace visible geometry&lt;/strong&gt;&lt;/p&gt;
+&lt;p&gt;Contact Shadows only have access to geometry that was visible when the depth buffer was generated. In simple terms that means if an object isn&amp;rsquo;t visible to the camera, it basically doesn&amp;rsquo;t exist. Due to this there a few artifacts that can happen&amp;hellip;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;Off-screen objects cannot cast contact shadows.&lt;/li&gt;
+&lt;li&gt;Objects entering or leaving the screen can cause shadows to appear or disappear &lt;em&gt;(same for edges of screen)&lt;/em&gt;&lt;/li&gt;
+&lt;li&gt;Occlusion information may be incomplete when geometry is hidden behind other geometry.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;strong&gt;We are testing against limited geometry information&lt;/strong&gt;.&lt;/p&gt;
+&lt;p&gt;Contact Shadows do not test against actual scene geometry. Instead, they reconstruct geometry from the depth buffer. The depth buffer only stores the closest visible surface at each pixel and contains no information about things like surface thickness, backfaces, hidden or interior geometry and so on.&lt;/p&gt;
+&lt;p&gt;Due to this issue, most implementations introduce a thickness value when performing intersection tests. Choosing a value that is too small can cause rays to miss thin objects, while values that are too large can create false self-shadowing and other artifacts.&lt;/p&gt;
+&lt;h4 id="getting-good-results"&gt;&lt;a href="#getting-good-results" class="header-anchor"&gt;&lt;/a&gt;Getting Good Results
+&lt;/h4&gt;&lt;p&gt;I probably did a bad job of selling the effect, but that&amp;rsquo;s ok! It&amp;rsquo;s important to learn about the problems first so we can setup this effect in a way where we can maximize the best results from it&amp;hellip; so how do we do that?&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Shadow ray lengths should generally be kept short.&lt;/strong&gt; Longer rays increase the likelihood of missing occluders, encountering missing geometry, and producing visible artifacts. &lt;em&gt;(NOTE: This is also where it gets it&amp;rsquo;s name, because it excels at adding small-scale shadows where objects make contact with nearby surfaces)&lt;/em&gt;&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Thickness values should remain relatively small.&lt;/strong&gt; Excessive thickness can lead to over-occlusion and funky self-shadowing artifacts, while values that are too small may allow thin geometry to leak light through.&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;If we keep all of that in mind, then our contact shadows can provide us a significant amount of additional shadow detail! So&amp;hellip; with all of that yapping done&amp;hellip; let&amp;rsquo;s go ahead and try it out!&lt;/p&gt;
+&lt;h4 id="naive-contact-shadows-world-space"&gt;&lt;a href="#naive-contact-shadows-world-space" class="header-anchor"&gt;&lt;/a&gt;Naive Contact Shadows (World Space)
+&lt;/h4&gt;&lt;p&gt;Starting out, we will do things in world-space to keep things simple. Remembering the concept&amp;hellip; given a point in 3D space &lt;em&gt;(vector_worldPosition)&lt;/em&gt;, and the direction of the light &lt;em&gt;(vector_worldLightDirection)&lt;/em&gt;, we want to march our ray for &lt;em&gt;(CONTACT_SHADOWS_SAMPLES)&lt;/em&gt; amount of samples towards the light. Within each sample we will read the depth texture and check if our ray is inside geometry or not.&lt;/p&gt;
+&lt;p&gt;First some configuration variables to define how we do this effect, these eventually will be tweaked later as well.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt; 1
+&lt;/span&gt;&lt;span class="lnt"&gt; 2
+&lt;/span&gt;&lt;span class="lnt"&gt; 3
+&lt;/span&gt;&lt;span class="lnt"&gt; 4
+&lt;/span&gt;&lt;span class="lnt"&gt; 5
+&lt;/span&gt;&lt;span class="lnt"&gt; 6
+&lt;/span&gt;&lt;span class="lnt"&gt; 7
+&lt;/span&gt;&lt;span class="lnt"&gt; 8
+&lt;/span&gt;&lt;span class="lnt"&gt; 9
+&lt;/span&gt;&lt;span class="lnt"&gt;10
+&lt;/span&gt;&lt;span class="lnt"&gt;11
+&lt;/span&gt;&lt;span class="lnt"&gt;12
+&lt;/span&gt;&lt;span class="lnt"&gt;13
+&lt;/span&gt;&lt;span class="lnt"&gt;14
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-HLSL" data-lang="HLSL"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//how many marches we do against the scene depth buffer&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="cp"&gt;#define CONTACT_SHADOWS_SAMPLES 64&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//how far out do the rays go&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="cp"&gt;#define CONTACT_SHADOWS_RAY_LENGTH 100.0&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//assumed thickness of the depth&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="cp"&gt;#define CONTACT_SHADOWS_THICKNESS 0.35&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//offset to our starting position so we avoid self-occlusion artifacts&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="cp"&gt;#define CONTACT_SHADOWS_BIAS 1e-04&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//offset to our starting position using the surface normal so we avoid self-occlusion artifacts&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="cp"&gt;#define CONTACT_SHADOWS_NORMAL_BIAS 1e-04&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;Now heres the actual function.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt; 1
+&lt;/span&gt;&lt;span class="lnt"&gt; 2
+&lt;/span&gt;&lt;span class="lnt"&gt; 3
+&lt;/span&gt;&lt;span class="lnt"&gt; 4
+&lt;/span&gt;&lt;span class="lnt"&gt; 5
+&lt;/span&gt;&lt;span class="lnt"&gt; 6
+&lt;/span&gt;&lt;span class="lnt"&gt; 7
+&lt;/span&gt;&lt;span class="lnt"&gt; 8
+&lt;/span&gt;&lt;span class="lnt"&gt; 9
+&lt;/span&gt;&lt;span class="lnt"&gt;10
+&lt;/span&gt;&lt;span class="lnt"&gt;11
+&lt;/span&gt;&lt;span class="lnt"&gt;12
+&lt;/span&gt;&lt;span class="lnt"&gt;13
+&lt;/span&gt;&lt;span class="lnt"&gt;14
+&lt;/span&gt;&lt;span class="lnt"&gt;15
+&lt;/span&gt;&lt;span class="lnt"&gt;16
+&lt;/span&gt;&lt;span class="lnt"&gt;17
+&lt;/span&gt;&lt;span class="lnt"&gt;18
+&lt;/span&gt;&lt;span class="lnt"&gt;19
+&lt;/span&gt;&lt;span class="lnt"&gt;20
+&lt;/span&gt;&lt;span class="lnt"&gt;21
+&lt;/span&gt;&lt;span class="lnt"&gt;22
+&lt;/span&gt;&lt;span class="lnt"&gt;23
+&lt;/span&gt;&lt;span class="lnt"&gt;24
+&lt;/span&gt;&lt;span class="lnt"&gt;25
+&lt;/span&gt;&lt;span class="lnt"&gt;26
+&lt;/span&gt;&lt;span class="lnt"&gt;27
+&lt;/span&gt;&lt;span class="lnt"&gt;28
+&lt;/span&gt;&lt;span class="lnt"&gt;29
+&lt;/span&gt;&lt;span class="lnt"&gt;30
+&lt;/span&gt;&lt;span class="lnt"&gt;31
+&lt;/span&gt;&lt;span class="lnt"&gt;32
+&lt;/span&gt;&lt;span class="lnt"&gt;33
+&lt;/span&gt;&lt;span class="lnt"&gt;34
+&lt;/span&gt;&lt;span class="lnt"&gt;35
+&lt;/span&gt;&lt;span class="lnt"&gt;36
+&lt;/span&gt;&lt;span class="lnt"&gt;37
+&lt;/span&gt;&lt;span class="lnt"&gt;38
+&lt;/span&gt;&lt;span class="lnt"&gt;39
+&lt;/span&gt;&lt;span class="lnt"&gt;40
+&lt;/span&gt;&lt;span class="lnt"&gt;41
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-HLSL" data-lang="HLSL"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;ContactShadowWorldSpace&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;vector_worldPosition&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;vector_worldNormal&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="c1"&gt;//this isn&amp;#39;t required, but this is used as an offset for our starting position&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;vector_worldLightDirection&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="p"&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="c1"&gt;//based on the amount of samples, and the ray length, calculate how spaced out each march should be&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;raymarchStepSize&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;CONTACT_SHADOWS_RAY_LENGTH&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt; &lt;span class="n"&gt;CONTACT_SHADOWS_SAMPLES&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;rayOrigin&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;vector_worldPosition&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="c1"&gt;//NOTE: using the geometry normal, we offset our starting position so that we don&amp;#39;t occlude ourselves&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;rayOrigin&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="n"&gt;vector_worldNormal&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;CONTACT_SHADOWS_NORMAL_BIAS&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="c1"&gt;//normal bias&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="c1"&gt;//our step interval&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;rayStep&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;vector_worldLightDirection&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;raymarchStepSize&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="c1"&gt;//advance the ray once&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;rayOrigin&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="n"&gt;rayStep&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="nd"&gt;loop&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mo"&gt;0&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt; &lt;span class="n"&gt;CONTACT_SHADOWS_SAMPLES&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="o"&gt;++&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;vector_samplePosition&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;rayOrigin&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;rayStep&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float2&lt;/span&gt; &lt;span class="n"&gt;vector_sampleUV&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;WorldToScreenUV&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;vector_samplePosition&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="c1"&gt;//clip the edges&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;vector_sampleUV&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;x&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt; &lt;span class="mf"&gt;0.0&lt;/span&gt; &lt;span class="o"&gt;||&lt;/span&gt; &lt;span class="n"&gt;vector_sampleUV&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;x&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="mf"&gt;1.0&lt;/span&gt; &lt;span class="o"&gt;||&lt;/span&gt; &lt;span class="n"&gt;vector_sampleUV&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;y&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt; &lt;span class="mf"&gt;0.0&lt;/span&gt; &lt;span class="o"&gt;||&lt;/span&gt; &lt;span class="n"&gt;vector_sampleUV&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;y&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="mf"&gt;1.0&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;break&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;sampledDepth&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;SceneTexturesStruct_SceneDepthTexture&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SampleLevel&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;View_SharedBilinearClampedSampler&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;vector_sampleUV&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mo"&gt;0&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;&lt;span class="n"&gt;r&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;vector_sampleWorldPosition&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;ReconstructWorldPosition&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;vector_sampleUV&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;sampledDepth&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;rayDepth&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;distance&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;vector_samplePosition&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;View_WorldCameraOrigin&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;sceneDepth&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;distance&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;vector_sampleWorldPosition&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;View_WorldCameraOrigin&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;depthDiff&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;rayDepth&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;sceneDepth&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;depthDiff&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;CONTACT_SHADOWS_BIAS&lt;/span&gt; &lt;span class="o"&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class="n"&gt;depthDiff&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt; &lt;span class="n"&gt;CONTACT_SHADOWS_THICKNESS&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="mi"&gt;100&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="mf"&gt;0.0&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="mf"&gt;1.0&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;Just like the &lt;a class="link" href="#micro-shadows" &gt;Micro Shadows&lt;/a&gt;, we apply this to the light attenuation as such.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt; 1
+&lt;/span&gt;&lt;span class="lnt"&gt; 2
+&lt;/span&gt;&lt;span class="lnt"&gt; 3
+&lt;/span&gt;&lt;span class="lnt"&gt; 4
+&lt;/span&gt;&lt;span class="lnt"&gt; 5
+&lt;/span&gt;&lt;span class="lnt"&gt; 6
+&lt;/span&gt;&lt;span class="lnt"&gt; 7
+&lt;/span&gt;&lt;span class="lnt"&gt; 8
+&lt;/span&gt;&lt;span class="lnt"&gt; 9
+&lt;/span&gt;&lt;span class="lnt"&gt;10
+&lt;/span&gt;&lt;span class="lnt"&gt;11
+&lt;/span&gt;&lt;span class="lnt"&gt;12
+&lt;/span&gt;&lt;span class="lnt"&gt;13
+&lt;/span&gt;&lt;span class="lnt"&gt;14
+&lt;/span&gt;&lt;span class="lnt"&gt;15
+&lt;/span&gt;&lt;span class="lnt"&gt;16
+&lt;/span&gt;&lt;span class="lnt"&gt;17
+&lt;/span&gt;&lt;span class="lnt"&gt;18
+&lt;/span&gt;&lt;span class="lnt"&gt;19
+&lt;/span&gt;&lt;span class="lnt"&gt;20
+&lt;/span&gt;&lt;span class="lnt"&gt;21
+&lt;/span&gt;&lt;span class="lnt"&gt;22
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-HLSL" data-lang="HLSL"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//pseudo code!&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//you&amp;#39;ll need to calculate vector_worldPosition, vector_normalDirection and access to vector_lightDirection&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//lightAttenuation will factor in other light terms, like shadows&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//if it&amp;#39;s a local light it should also factor in distance falloffs and whatnot&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//...&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//micro shadowing from before&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="n"&gt;lightAttenuation&lt;/span&gt; &lt;span class="o"&gt;*=&lt;/span&gt; &lt;span class="n"&gt;ComputeMicroShadowing&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;GBufferData&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;GBufferAO&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;NdotL&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mf"&gt;1.0f&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//NEW: our contact shadows!&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="n"&gt;lightAttenuation&lt;/span&gt; &lt;span class="o"&gt;*=&lt;/span&gt; &lt;span class="n"&gt;ContactShadowWorldSpace&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;vector_worldPosition&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xyz&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="c1"&gt;//vector_worldPosition&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;vector_normalDirection&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="c1"&gt;//vector_worldNormal&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;vector_lightDirection&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt; &lt;span class="c1"&gt;//vector_worldLightDirection&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//add diffuse and specular&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="n"&gt;finalColor&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="n"&gt;diffuseLight&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="n"&gt;finalColor&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="n"&gt;specularLight&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//apply attenuation&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//NOTE: again just like micro shadowing, the terms should always be affecting both the diffuse and specular.&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="n"&gt;finalColor&lt;/span&gt; &lt;span class="o"&gt;*=&lt;/span&gt; &lt;span class="n"&gt;lightAttenuation&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;Ok sweet it&amp;rsquo;s all setup, now lets check the results&amp;hellip;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/micro-shadows.jpg" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Micro Shadows Only&lt;/em&gt;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/contact-shadows-no-random-world-space.jpg" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Micro Shadows + Contact Shadows&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Wow! What a difference, there so much detail in the scene gets revealed now. All of the foliage also that was excluded from the shadowmaps can now cast shadows again. Looking near geometry contact points also the shadows sharpen up more than before, and the overall shadow resolution looks much higher! Let&amp;rsquo;s take a closer peek&amp;hellip;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/closeup1-og.png" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Micro Shadows Only&lt;/em&gt;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/closeup1-contact.png" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Micro Shadows + Contact Shadows&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Nice, look at that! Cloud is reciving self-shadowing from his hair. That kind of detail would be too small to be resolved properly by the main shadowmaps, but the contact shadows is adding back in those details. The shadow underneath his shoulder-pad also became sharper, and behind him many foliage details start casting their shadows onto the scene.&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/contact-shadows-no-random-world-space-naked.jpg" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Contact Shadows Term&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Well&amp;hellip; I geuss we&amp;rsquo;re done right? What do the timings look like&amp;hellip;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/timing-naive-contact-shadows-64-worldspace.png" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;3.02ms&lt;/code&gt; Oh my&amp;hellip; that is not good&amp;hellip; the shader with the added effect is really slow! &lt;em&gt;(baseline timings were roughly &lt;code&gt;0.2ms - 0.21ms&lt;/code&gt;)&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Well&amp;hellip; time to really dig in and optimize things, atleast now we got it working so lets see what we can do.&lt;/p&gt;
+&lt;h4 id="optimization-reduce-sample-counts"&gt;&lt;a href="#optimization-reduce-sample-counts" class="header-anchor"&gt;&lt;/a&gt;Optimization: Reduce Sample Counts
+&lt;/h4&gt;&lt;p&gt;So the first obvious thing we can reduce the sample count, initally I had the sample count set to 64 &lt;em&gt;(which is pretty high)&lt;/em&gt; so lets knock it down by half.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt;1
+&lt;/span&gt;&lt;span class="lnt"&gt;2
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-HLSL" data-lang="HLSL"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//previously was 64&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="cp"&gt;#define CONTACT_SHADOWS_SAMPLES 32&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;Now what do the timings look like?&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/timing-naive-contact-shadows-32-worldspace.png" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;1.63ms&lt;/code&gt;, Ok that is much better! Still far from ideal &lt;em&gt;(we want to be sub 1 milisecond)&lt;/em&gt;, but that makes things a little more managable. However we reduced the sample count though&amp;hellip; so that means our quality is worse right?&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/stepping-32-no-random.png" width="49%" /&gt;
+&lt;img src="content/stepping-64-no-random.png" width="49%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Left: 32 Samples | Right: 64 Samples&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Yeah it&amp;rsquo;s definetly worse, and what is wierd is that we&amp;rsquo;re seeing this wierd stepping like artifact &lt;em&gt;(which is a side effect of raymarching, we march in steps)&lt;/em&gt;. If we reduce samples even more those steps will become even more visible. We could try to reduce the ray length to shorten the step distance between samples but that means we won&amp;rsquo;t be tracing rays as far anymore.&lt;/p&gt;
+&lt;p&gt;What else can we do?&lt;/p&gt;
+&lt;h4 id="quality-boost-introduce-noise-blue-noise"&gt;&lt;a href="#quality-boost-introduce-noise-blue-noise" class="header-anchor"&gt;&lt;/a&gt;Quality Boost: Introduce Noise (Blue Noise)
+&lt;/h4&gt;&lt;p&gt;Fortunately we are in luck, as there is a way that we can mitigate these raymarch stepping artifacts. The solution is noise! &lt;em&gt;(or jitter, or dithering)&lt;/em&gt; To explain quickly how this works&amp;hellip;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/raymarch_step_comparison.svg" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;Currently we are stepping uniformly into the depth buffer for every pixel. As I mentioned prior with more samples we march with smaller steps which leads to better quality &lt;em&gt;(but more expensive)&lt;/em&gt;, dropping the samples increases performance but as a consequence the step lengths become larger leading to worse quality.&lt;/p&gt;
+&lt;p&gt;The uniformity of the steps is why we are seeing them in the first place. If we introduce randomness into the step, then this will actually allow us to march at different intervals. Letting us cover broader areas without increasing sample counts.&lt;/p&gt;
+&lt;p&gt;Seems sound&amp;hellip; lets try it! First let&amp;rsquo;s adjust the function with random in mind&amp;hellip;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt; 1
+&lt;/span&gt;&lt;span class="lnt"&gt; 2
+&lt;/span&gt;&lt;span class="lnt"&gt; 3
+&lt;/span&gt;&lt;span class="lnt"&gt; 4
+&lt;/span&gt;&lt;span class="lnt"&gt; 5
+&lt;/span&gt;&lt;span class="lnt"&gt; 6
+&lt;/span&gt;&lt;span class="lnt"&gt; 7
+&lt;/span&gt;&lt;span class="lnt"&gt; 8
+&lt;/span&gt;&lt;span class="lnt"&gt; 9
+&lt;/span&gt;&lt;span class="lnt"&gt;10
+&lt;/span&gt;&lt;span class="lnt"&gt;11
+&lt;/span&gt;&lt;span class="lnt"&gt;12
+&lt;/span&gt;&lt;span class="lnt"&gt;13
+&lt;/span&gt;&lt;span class="lnt"&gt;14
+&lt;/span&gt;&lt;span class="lnt"&gt;15
+&lt;/span&gt;&lt;span class="lnt"&gt;16
+&lt;/span&gt;&lt;span class="lnt"&gt;17
+&lt;/span&gt;&lt;span class="lnt"&gt;18
+&lt;/span&gt;&lt;span class="lnt"&gt;19
+&lt;/span&gt;&lt;span class="lnt"&gt;20
+&lt;/span&gt;&lt;span class="lnt"&gt;21
+&lt;/span&gt;&lt;span class="lnt"&gt;22
+&lt;/span&gt;&lt;span class="lnt"&gt;23
+&lt;/span&gt;&lt;span class="lnt"&gt;24
+&lt;/span&gt;&lt;span class="lnt"&gt;25
+&lt;/span&gt;&lt;span class="lnt"&gt;26
+&lt;/span&gt;&lt;span class="lnt"&gt;27
+&lt;/span&gt;&lt;span class="lnt"&gt;28
+&lt;/span&gt;&lt;span class="lnt"&gt;29
+&lt;/span&gt;&lt;span class="lnt"&gt;30
+&lt;/span&gt;&lt;span class="lnt"&gt;31
+&lt;/span&gt;&lt;span class="lnt"&gt;32
+&lt;/span&gt;&lt;span class="lnt"&gt;33
+&lt;/span&gt;&lt;span class="lnt"&gt;34
+&lt;/span&gt;&lt;span class="lnt"&gt;35
+&lt;/span&gt;&lt;span class="lnt"&gt;36
+&lt;/span&gt;&lt;span class="lnt"&gt;37
+&lt;/span&gt;&lt;span class="lnt"&gt;38
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-HLSL" data-lang="HLSL"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;ContactShadowWorldSpace&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;vector_worldPosition&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;vector_worldNormal&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;vector_worldLightDirection&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;random&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="c1"&gt;//added field for random values that we provide&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="p"&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;raymarchStepSize&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;CONTACT_SHADOWS_RAY_LENGTH&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt; &lt;span class="n"&gt;CONTACT_SHADOWS_SAMPLES&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;rayOrigin&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;vector_worldPosition&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;rayOrigin&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="n"&gt;vector_worldNormal&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;CONTACT_SHADOWS_NORMAL_BIAS&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="c1"&gt;//our step interval&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;rayStep&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;vector_worldLightDirection&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;raymarchStepSize&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="c1"&gt;//advance the ray once with jitter&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;rayOrigin&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="n"&gt;rayStep&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;random&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="nd"&gt;loop&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mo"&gt;0&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt; &lt;span class="n"&gt;CONTACT_SHADOWS_SAMPLES&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="o"&gt;++&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;vector_samplePosition&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;rayOrigin&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;rayStep&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float2&lt;/span&gt; &lt;span class="n"&gt;vector_sampleUV&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;WorldToScreenUV&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;vector_samplePosition&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;vector_sampleUV&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;x&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt; &lt;span class="mf"&gt;0.0&lt;/span&gt; &lt;span class="o"&gt;||&lt;/span&gt; &lt;span class="n"&gt;vector_sampleUV&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;x&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="mf"&gt;1.0&lt;/span&gt; &lt;span class="o"&gt;||&lt;/span&gt; &lt;span class="n"&gt;vector_sampleUV&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;y&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt; &lt;span class="mf"&gt;0.0&lt;/span&gt; &lt;span class="o"&gt;||&lt;/span&gt; &lt;span class="n"&gt;vector_sampleUV&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;y&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="mf"&gt;1.0&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;break&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;sampledDepth&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;SceneTexturesStruct_SceneDepthTexture&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SampleLevel&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;View_SharedBilinearClampedSampler&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;vector_sampleUV&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mo"&gt;0&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;&lt;span class="n"&gt;r&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;vector_sampleWorldPosition&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;ReconstructWorldPosition&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;vector_sampleUV&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;sampledDepth&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;rayDepth&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;distance&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;vector_samplePosition&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;View_WorldCameraOrigin&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;sceneDepth&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;distance&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;vector_sampleWorldPosition&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;View_WorldCameraOrigin&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;depthDiff&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;rayDepth&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;sceneDepth&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;depthDiff&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;CONTACT_SHADOWS_BIAS&lt;/span&gt; &lt;span class="o"&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class="n"&gt;depthDiff&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt; &lt;span class="n"&gt;CONTACT_SHADOWS_THICKNESS&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="mi"&gt;100&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="mf"&gt;0.0&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="mf"&gt;1.0&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;Then just before we call our function, we can either calculate a random noise pattern or sample one from a texture. In my case I will sample a noise pattern texture, mostly because it&amp;rsquo;s already being provided into the shader.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt;1
+&lt;/span&gt;&lt;span class="lnt"&gt;2
+&lt;/span&gt;&lt;span class="lnt"&gt;3
+&lt;/span&gt;&lt;span class="lnt"&gt;4
+&lt;/span&gt;&lt;span class="lnt"&gt;5
+&lt;/span&gt;&lt;span class="lnt"&gt;6
+&lt;/span&gt;&lt;span class="lnt"&gt;7
+&lt;/span&gt;&lt;span class="lnt"&gt;8
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-HLSL" data-lang="HLSL"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//pseudo code!&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;random&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="c1"&gt;//... calculate noise here, or sample it from a texture (needs to be per pixel!)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="n"&gt;lightAttenuation&lt;/span&gt; &lt;span class="o"&gt;*=&lt;/span&gt; &lt;span class="n"&gt;ContactShadowWorldSpace&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;vector_worldPosition&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xyz&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="c1"&gt;//vector_worldPosition&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;vector_normalDirection&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="c1"&gt;//vector_worldNormal&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;vector_lightDirection&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;random&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt; &lt;span class="c1"&gt;//plug in our random value&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;Just for visuals, this is the noise texture given to the shader already. It&amp;rsquo;s &lt;a class="link" href="https://blog.demofox.org/2018/01/30/what-the-heck-is-blue-noise/" target="_blank" rel="noopener"
+&gt;Blue Noise&lt;/a&gt;.&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/renderdoc-blue-noise-tex.png" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;Alright, now that we have noise within our contact shadows, how does it look now?&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/stepping-32-random-blue.png" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;Ok that actually looks pretty good! I&amp;rsquo;m actually seeing some areas that before were not even visible with the 64 Samples non-jittered result. The only drawback is now we have noise everywhere&amp;hellip; but fortunately we have TAA later in the rendering pipeline so we can rely on it to clean up the noise and blend results temporally.&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/stepping-32-random-blue.png" width="49%" /&gt;
+&lt;img src="content/stepping-32-no-random.png" width="49%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Left: 32 samples with Blue Noise | Right: 32 samples with no noise&lt;/em&gt;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/stepping-32-random-blue.png" width="49%" /&gt;
+&lt;img src="content/stepping-64-no-random.png" width="49%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Left: 32 samples with Blue Noise | Right: 64 samples with no noise&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Anyway&amp;hellip; how are the timings now, they should be the same right?&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/timing-with-blue-noise.png" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;1.67ms&lt;/code&gt;&amp;hellip; huh? It&amp;rsquo;s actually more expensive to use noise?&lt;/p&gt;
+&lt;p&gt;Granted it&amp;rsquo;s not by alot &lt;em&gt;&lt;code&gt;~0.04ms&lt;/code&gt;&lt;/em&gt;, but we are at the same sample count! How is this happening?&lt;/p&gt;
+&lt;p&gt;Well the answer comes down to coherence. To keep the explanation as simple as I can, heres the quick context. We are working with shaders here, and shaders run on GPUs. GPUs are essentially big multi-core processors. They are extremely good at processing large groups of pixels that perform similar work.&lt;/p&gt;
+&lt;p&gt;Now before we introduced jitter, neighboring pixels were marching through the scene using nearly identical sample locations. This allowed the GPU to access memory efficiently and reuse cached data. Great for performance!&lt;/p&gt;
+&lt;p&gt;However&amp;hellip; once we added noise, every pixel now follows a slightly different path. The sample count is the same, but memory accesses become less coherent, cache efficiency decreases, and performance becomes worse! Arghhhhh!&lt;/p&gt;
+&lt;p&gt;Fortunately&amp;hellip; we&amp;rsquo;re not out of options yet!&lt;/p&gt;
+&lt;p&gt;For jitter we&amp;rsquo;re currently using &lt;a class="link" href="https://blog.demofox.org/2018/01/30/what-the-heck-is-blue-noise/" target="_blank" rel="noopener"
+&gt;Blue Noise&lt;/a&gt;. Compared to White Noise, &lt;a class="link" href="https://blog.demofox.org/2018/01/30/what-the-heck-is-blue-noise/" target="_blank" rel="noopener"
+&gt;Blue Noise&lt;/a&gt; produces a more visually pleasing distribution of samples and tends to hide artifacts much better. Now whether it&amp;rsquo;s white or blue noise it doesn&amp;rsquo;t really matter here because both are very random &lt;em&gt;(white noise more so)&lt;/em&gt; and due to that nature it&amp;rsquo;s is contributing to a loss of coherence. So now we have an interesting question&amp;hellip; can we find a jitter pattern that sits somewhere between perfectly uniform and completely random?&lt;/p&gt;
+&lt;h4 id="optimization-switching-to-interleaved-gradient-noise-ign"&gt;&lt;a href="#optimization-switching-to-interleaved-gradient-noise-ign" class="header-anchor"&gt;&lt;/a&gt;Optimization: Switching to Interleaved Gradient Noise (IGN)
+&lt;/h4&gt;&lt;p&gt;Enter &lt;a class="link" href="https://blog.demofox.org/2022/01/01/interleaved-gradient-noise-a-different-kind-of-low-discrepancy-sequence/" target="_blank" rel="noopener"
+&gt;Interleaved Gradient Noise&lt;/a&gt;, this is a noise pattern that comes from &lt;a class="link" href="https://www.iryoku.com/next-generation-post-processing-in-call-of-duty-advanced-warfare/" target="_blank" rel="noopener"
+&gt;Jorge Jimenez&lt;/a&gt;. Unlike Blue Noise or White Noise, &lt;a class="link" href="https://blog.demofox.org/2022/01/01/interleaved-gradient-noise-a-different-kind-of-low-discrepancy-sequence/" target="_blank" rel="noopener"
+&gt;Interleaved Gradient Noise&lt;/a&gt; is designed to be low-discrepancy, which just means that neighboring pixels receive values that are distributed more evenly and predictably &lt;em&gt;(as opposed to uneven, random distribution)&lt;/em&gt;.&lt;/p&gt;
+&lt;p&gt;The goal isn&amp;rsquo;t to be perfectly random, but about providing good sample coverage while maintaining some degree of coherence. Introducing enough variation to break up visible stepping artifacts, while remaining structured enough to be more GPU-friendly than purely random sampling patterns.&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/noisesbig.png" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;&lt;a class="link" href="%28https://blog.demofox.org/2022/01/01/interleaved-gradient-noise-a-different-kind-of-low-discrepancy-sequence/%29" &gt;Image from Demofox&lt;/a&gt;&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Ok, seems sound&amp;hellip; lets try it out! This one we calculate rather than sample from a texture.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt;1
+&lt;/span&gt;&lt;span class="lnt"&gt;2
+&lt;/span&gt;&lt;span class="lnt"&gt;3
+&lt;/span&gt;&lt;span class="lnt"&gt;4
+&lt;/span&gt;&lt;span class="lnt"&gt;5
+&lt;/span&gt;&lt;span class="lnt"&gt;6
+&lt;/span&gt;&lt;span class="lnt"&gt;7
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-HLSL" data-lang="HLSL"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;InterleavedGradientNoise&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;float2&lt;/span&gt; &lt;span class="n"&gt;pixCoord&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;frameCount&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="p"&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;magic&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kt"&gt;float3&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mf"&gt;0.06711056f&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mf"&gt;0.00583715f&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mf"&gt;52.9829189f&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="kt"&gt;float2&lt;/span&gt; &lt;span class="n"&gt;frameMagicScale&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kt"&gt;float2&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mf"&gt;2.083f&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mf"&gt;4.867f&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;pixCoord&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="n"&gt;frameCount&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;frameMagicScale&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="nb"&gt;frac&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;magic&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;z&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="nb"&gt;frac&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;dot&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;pixCoord&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;magic&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xy&lt;/span&gt;&lt;span class="p"&gt;)));&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;Plugging this in place of the Blue Noise that we were using earlier&amp;hellip;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/stepping-32-ign.png" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;32 Samples with Interleaved Gradient Noise&lt;/em&gt;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/stepping-32-ign.png" width="49%" /&gt;
+&lt;img src="content/stepping-32-random-blue.png" width="49%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Left: 32 Samples Interleaved Gradient Noise | Right: 32 Samples Blue Noise&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Interesting&amp;hellip; the noise seems reduced by quite a bit which is great for quality. The stepping artifacts also arent that visible either! This is definetly looking better, but the real question is&amp;hellip; is the GPU happier with this?&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/timing-with-ign.png" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;Roughly &lt;code&gt;1.63ms&lt;/code&gt;, the timings went back down! The GPU is happier with that, good!&lt;/p&gt;
+&lt;p&gt;But again we still are not done, like I said earlier while knocking the sample count down further led to much better timings, &lt;code&gt;1.6ms&lt;/code&gt; is still not great and not where I want it to be. Remember that the original shader timings without contact shadows were roughly &lt;code&gt;0.2ms&lt;/code&gt;, so we still have about &lt;code&gt;~1.3ms&lt;/code&gt; to shave off at the most &lt;em&gt;(it&amp;rsquo;s a little unrealistic but thats where we started from)&lt;/em&gt;. What are some other optimizations we can actually do to improve performance?&lt;/p&gt;
+&lt;h4 id="optimization-clip-space"&gt;&lt;a href="#optimization-clip-space" class="header-anchor"&gt;&lt;/a&gt;Optimization: Clip Space
+&lt;/h4&gt;&lt;p&gt;Well other than just toying with the sample counts and ray lengths&amp;hellip; we can actually change our raymarching strategy!&lt;/p&gt;
+&lt;p&gt;Our original function traces contact shadows in world space, which seems fine and easy enough&amp;hellip; but as it&amp;rsquo;s turns out we are actually doing quite a bit more work than we need to.&lt;/p&gt;
+&lt;p&gt;For each raymarch step we advance a world-space position, project that position into clip/screen space, sample the depth buffer, and then perform our intersection tests. Since these operations occur inside the raymarch loop, their cost quickly adds up especially with the large amount of samples.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt;1
+&lt;/span&gt;&lt;span class="lnt"&gt;2
+&lt;/span&gt;&lt;span class="lnt"&gt;3
+&lt;/span&gt;&lt;span class="lnt"&gt;4
+&lt;/span&gt;&lt;span class="lnt"&gt;5
+&lt;/span&gt;&lt;span class="lnt"&gt;6
+&lt;/span&gt;&lt;span class="lnt"&gt;7
+&lt;/span&gt;&lt;span class="lnt"&gt;8
+&lt;/span&gt;&lt;span class="lnt"&gt;9
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-HLSL" data-lang="HLSL"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//inside the loop...&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float2&lt;/span&gt; &lt;span class="n"&gt;vector_sampleUV&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;WorldToScreenUV&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;vector_samplePosition&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt; &lt;span class="c1"&gt;//&amp;lt;------&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//...&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;vector_sampleWorldPosition&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;ReconstructWorldPosition&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;vector_sampleUV&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;sampledDepth&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt; &lt;span class="c1"&gt;//&amp;lt;------&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;rayDepth&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;distance&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;vector_samplePosition&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;View_WorldCameraOrigin&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;sceneDepth&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;distance&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;vector_sampleWorldPosition&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;View_WorldCameraOrigin&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt; 1
+&lt;/span&gt;&lt;span class="lnt"&gt; 2
+&lt;/span&gt;&lt;span class="lnt"&gt; 3
+&lt;/span&gt;&lt;span class="lnt"&gt; 4
+&lt;/span&gt;&lt;span class="lnt"&gt; 5
+&lt;/span&gt;&lt;span class="lnt"&gt; 6
+&lt;/span&gt;&lt;span class="lnt"&gt; 7
+&lt;/span&gt;&lt;span class="lnt"&gt; 8
+&lt;/span&gt;&lt;span class="lnt"&gt; 9
+&lt;/span&gt;&lt;span class="lnt"&gt;10
+&lt;/span&gt;&lt;span class="lnt"&gt;11
+&lt;/span&gt;&lt;span class="lnt"&gt;12
+&lt;/span&gt;&lt;span class="lnt"&gt;13
+&lt;/span&gt;&lt;span class="lnt"&gt;14
+&lt;/span&gt;&lt;span class="lnt"&gt;15
+&lt;/span&gt;&lt;span class="lnt"&gt;16
+&lt;/span&gt;&lt;span class="lnt"&gt;17
+&lt;/span&gt;&lt;span class="lnt"&gt;18
+&lt;/span&gt;&lt;span class="lnt"&gt;19
+&lt;/span&gt;&lt;span class="lnt"&gt;20
+&lt;/span&gt;&lt;span class="lnt"&gt;21
+&lt;/span&gt;&lt;span class="lnt"&gt;22
+&lt;/span&gt;&lt;span class="lnt"&gt;23
+&lt;/span&gt;&lt;span class="lnt"&gt;24
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-HLSL" data-lang="HLSL"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float2&lt;/span&gt; &lt;span class="n"&gt;WorldToScreenUV&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;vector_worldPosition&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="p"&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float4&lt;/span&gt; &lt;span class="n"&gt;vector_clipPosition&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;mul&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;View_WorldToClip&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;float4&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;vector_worldPosition&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mf"&gt;1.0&lt;/span&gt;&lt;span class="p"&gt;));&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;vector_clipPosition&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xyz&lt;/span&gt; &lt;span class="o"&gt;/=&lt;/span&gt; &lt;span class="n"&gt;vector_clipPosition&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;w&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float2&lt;/span&gt; &lt;span class="n"&gt;vector_uv&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;vector_uv&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;x&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;vector_clipPosition&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;x&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="mf"&gt;0.5&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="mf"&gt;0.5&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;vector_uv&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;y&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mf"&gt;1.0&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;vector_clipPosition&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;y&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="mf"&gt;0.5&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="mf"&gt;0.5&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt; &lt;span class="c1"&gt;//NOTE: flip because DirectX convention&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;vector_uv&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//&amp;#34;screen uv&amp;#34; to world&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;ReconstructWorldPosition&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;float2&lt;/span&gt; &lt;span class="n"&gt;vector_uv&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;depth&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="p"&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float4&lt;/span&gt; &lt;span class="n"&gt;vector_clipPosition&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;vector_clipPosition&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;x&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;vector_uv&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;x&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="mf"&gt;2.0&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="mf"&gt;1.0&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;vector_clipPosition&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;y&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mf"&gt;1.0&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;vector_uv&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;y&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="mf"&gt;2.0&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="mf"&gt;1.0&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="c1"&gt;//NOTE: flip because DirectX convention&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;vector_clipPosition&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;z&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;depth&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;vector_clipPosition&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;w&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mf"&gt;1.0&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float4&lt;/span&gt; &lt;span class="n"&gt;vector_worldPosition&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;mul&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;View_ClipToWorld&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;vector_clipPosition&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="n"&gt;vector_worldPosition&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xyz&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt; &lt;span class="n"&gt;vector_worldPosition&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;w&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;Recall that Contact Shadows ultimately is just screen-space effect. The depth buffer already exists in screen space, and every occlusion test eventually happens against that screen-space data. So instead of marching a ray through world space and repeatedly projecting it back to the screen, we can perform the raymarch directly in this space &lt;em&gt;(clip space)&lt;/em&gt;. This removes much of the per-step transformation work and allows the shader to operate in the same space as the depth buffer it is testing against.&lt;/p&gt;
+&lt;p&gt;The end result should be the same shadowing solution, but with significantly less work performed inside the raymarch loop. That sounds like a plan, lets try it!&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt; 1
+&lt;/span&gt;&lt;span class="lnt"&gt; 2
+&lt;/span&gt;&lt;span class="lnt"&gt; 3
+&lt;/span&gt;&lt;span class="lnt"&gt; 4
+&lt;/span&gt;&lt;span class="lnt"&gt; 5
+&lt;/span&gt;&lt;span class="lnt"&gt; 6
+&lt;/span&gt;&lt;span class="lnt"&gt; 7
+&lt;/span&gt;&lt;span class="lnt"&gt; 8
+&lt;/span&gt;&lt;span class="lnt"&gt; 9
+&lt;/span&gt;&lt;span class="lnt"&gt;10
+&lt;/span&gt;&lt;span class="lnt"&gt;11
+&lt;/span&gt;&lt;span class="lnt"&gt;12
+&lt;/span&gt;&lt;span class="lnt"&gt;13
+&lt;/span&gt;&lt;span class="lnt"&gt;14
+&lt;/span&gt;&lt;span class="lnt"&gt;15
+&lt;/span&gt;&lt;span class="lnt"&gt;16
+&lt;/span&gt;&lt;span class="lnt"&gt;17
+&lt;/span&gt;&lt;span class="lnt"&gt;18
+&lt;/span&gt;&lt;span class="lnt"&gt;19
+&lt;/span&gt;&lt;span class="lnt"&gt;20
+&lt;/span&gt;&lt;span class="lnt"&gt;21
+&lt;/span&gt;&lt;span class="lnt"&gt;22
+&lt;/span&gt;&lt;span class="lnt"&gt;23
+&lt;/span&gt;&lt;span class="lnt"&gt;24
+&lt;/span&gt;&lt;span class="lnt"&gt;25
+&lt;/span&gt;&lt;span class="lnt"&gt;26
+&lt;/span&gt;&lt;span class="lnt"&gt;27
+&lt;/span&gt;&lt;span class="lnt"&gt;28
+&lt;/span&gt;&lt;span class="lnt"&gt;29
+&lt;/span&gt;&lt;span class="lnt"&gt;30
+&lt;/span&gt;&lt;span class="lnt"&gt;31
+&lt;/span&gt;&lt;span class="lnt"&gt;32
+&lt;/span&gt;&lt;span class="lnt"&gt;33
+&lt;/span&gt;&lt;span class="lnt"&gt;34
+&lt;/span&gt;&lt;span class="lnt"&gt;35
+&lt;/span&gt;&lt;span class="lnt"&gt;36
+&lt;/span&gt;&lt;span class="lnt"&gt;37
+&lt;/span&gt;&lt;span class="lnt"&gt;38
+&lt;/span&gt;&lt;span class="lnt"&gt;39
+&lt;/span&gt;&lt;span class="lnt"&gt;40
+&lt;/span&gt;&lt;span class="lnt"&gt;41
+&lt;/span&gt;&lt;span class="lnt"&gt;42
+&lt;/span&gt;&lt;span class="lnt"&gt;43
+&lt;/span&gt;&lt;span class="lnt"&gt;44
+&lt;/span&gt;&lt;span class="lnt"&gt;45
+&lt;/span&gt;&lt;span class="lnt"&gt;46
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-HLSL" data-lang="HLSL"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;ContactShadowClipSpace&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;vector_worldPosition&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;vector_worldNormal&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;vector_worldLightDirection&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;random&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="p"&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="c1"&gt;//minor micro optimization, precompute 1.0f / CONTACT_SHADOWS_SAMPLES so we only end up doing a mul&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;invSamples&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;rcp&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;CONTACT_SHADOWS_SAMPLES&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;rayOrigin&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;vector_worldPosition&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float4&lt;/span&gt; &lt;span class="n"&gt;clipStart&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;mul&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;View_WorldToClip&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;float4&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;rayOrigin&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;));&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float4&lt;/span&gt; &lt;span class="n"&gt;clipEnd&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;mul&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;View_WorldToClip&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;float4&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;rayOrigin&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;vector_worldLightDirection&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;CONTACT_SHADOWS_RAY_LENGTH&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;));&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;ndcStart&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;clipStart&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xyz&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt; &lt;span class="n"&gt;clipStart&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;w&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;ndcEnd&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;clipEnd&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xyz&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt; &lt;span class="n"&gt;clipEnd&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;w&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;rayLinearStart&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;LinearEyeDepth&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;ndcStart&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;z&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;rayLinearEnd&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;LinearEyeDepth&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;ndcEnd&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;z&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;rayLinearDepth&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;lerp&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;rayLinearStart&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;rayLinearEnd&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;random&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;invSamples&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;rayLinearStep&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;rayLinearEnd&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;rayLinearStart&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;invSamples&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="kt"&gt;float2&lt;/span&gt; &lt;span class="n"&gt;uvScale&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kt"&gt;float2&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mf"&gt;0.5&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mf"&gt;0.5&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float2&lt;/span&gt; &lt;span class="n"&gt;uvStep&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;ndcEnd&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xy&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;ndcStart&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xy&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;invSamples&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;uvScale&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float2&lt;/span&gt; &lt;span class="n"&gt;uv&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;mad&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;ndcStart&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xy&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;uvScale&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mf"&gt;0.5&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;uvStep&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;random&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="nd"&gt;loop&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mo"&gt;0&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt; &lt;span class="n"&gt;CONTACT_SHADOWS_SAMPLES&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="o"&gt;++&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;any&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;uv&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt; &lt;span class="mf"&gt;0.0&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;||&lt;/span&gt; &lt;span class="nb"&gt;any&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;uv&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="mf"&gt;1.0&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;break&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;depth&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;SceneTexturesStruct_SceneDepthTexture&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SampleLevel&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;View_SharedBilinearClampedSampler&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;uv&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mo"&gt;0&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;&lt;span class="n"&gt;r&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;linearDepth&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;View_InvDeviceZToWorldZTransform&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;z&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;depth&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;View_InvDeviceZToWorldZTransform&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;w&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;penetration&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;rayLinearDepth&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;linearDepth&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;penetration&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="n"&gt;CONTACT_SHADOWS_BIAS&lt;/span&gt; &lt;span class="o"&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class="n"&gt;penetration&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt; &lt;span class="n"&gt;CONTACT_SHADOWS_THICKNESS&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="mf"&gt;0.0&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;rayLinearDepth&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="n"&gt;rayLinearStep&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;uv&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="n"&gt;uvStep&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="mf"&gt;1.0&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;It&amp;rsquo;s worth mentioning that moving from world space to clip space changes some of the ray traversal math. The important takeaway is that we eliminate the space conversions that were previously happening inside the raymarch loop.&lt;/p&gt;
+&lt;p&gt;Now because our depth comparisons now occur in projected space rather than world space, parameters such as CONTACT_SHADOWS_THICKNESS will need to be adjusted. Aside from that though it still functions the same.&lt;/p&gt;
+&lt;p&gt;So! how do our contact shadows look now? If we did everything right it should look mostly the same&amp;hellip;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/contact-shadows-random-world-32-naked.jpg" width="49%" /&gt;
+&lt;img src="content/contact-shadows-random-clip-32-naked.jpg" width="49%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Left: World Space Version | Right: Clip Space Version&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Ok thats a good sign, it means our math all works as it should&amp;hellip; now what about the timings?&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/timings-clip-space-32.png" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;Roughly &lt;code&gt;0.95ms&lt;/code&gt;, oh wow, that killed effectively &lt;code&gt;~0.6ms&lt;/code&gt;, Awesome! Not only do things now run much better, but they still look the same, fantastic! But there is still a little more that we can do&amp;hellip;&lt;/p&gt;
+&lt;h4 id="optimization-early-sky-out"&gt;&lt;a href="#optimization-early-sky-out" class="header-anchor"&gt;&lt;/a&gt;Optimization: Early Sky Out
+&lt;/h4&gt;&lt;p&gt;One very small and simple thing we can do for optimization, is just before we do contact shadows we can check if our point is in the sky. This is important as we wouldn&amp;rsquo;t want to do contact shadow tracing on sky pixels as it&amp;rsquo;d just be a waste. We do this just by checking our depth buffer, and the distance value. If the distance relative to camera is insanely high, it&amp;rsquo;s probably a sky pixel so we don&amp;rsquo;t calculate shadows.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt;1
+&lt;/span&gt;&lt;span class="lnt"&gt;2
+&lt;/span&gt;&lt;span class="lnt"&gt;3
+&lt;/span&gt;&lt;span class="lnt"&gt;4
+&lt;/span&gt;&lt;span class="lnt"&gt;5
+&lt;/span&gt;&lt;span class="lnt"&gt;6
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-HLSL" data-lang="HLSL"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//optimization: early out for sky&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//check if our depth values are less than this large distance value...&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="k"&gt;if&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;GBufferData&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;Depth&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt; &lt;span class="mi"&gt;1000000&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="p"&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="c1"&gt;//our depth values here are less than that, so do contact shadows!&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;Visually there is no difference, but timing wise there is a small bit of improvement &lt;em&gt;(hard to fully pin down from the noise within RenderDocs replay timings)&lt;/em&gt;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/timing-early-sky-out.png" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;Roughly &lt;code&gt;0.94ms&lt;/code&gt;, It&amp;rsquo;s really small but every little bit can help. Granted this will vary depending on how much of the screen is the sky vs. ground, in this example quite a large portion of the screen is ground.&lt;/p&gt;
+&lt;p&gt;So just to quickly simulate an example of where we have a frame with less ground coverage and more sky, I&amp;rsquo;ve reduced the depth distance check value from &lt;code&gt;1000000&lt;/code&gt; to &lt;code&gt;10000&lt;/code&gt;. Checking the timing values then&amp;hellip;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/timing-early-sky-out-aggressive.png" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;Roughly &lt;code&gt;0.76ms&lt;/code&gt;, which is not bad actually. However this can vary because the player is often times looking at the ground and never upwards toward the sky. So atleast for those that do&amp;hellip; saved you some frames :D&lt;/p&gt;
+&lt;h4 id="optimization-further-sample-reduction"&gt;&lt;a href="#optimization-further-sample-reduction" class="header-anchor"&gt;&lt;/a&gt;Optimization: Further Sample Reduction
+&lt;/h4&gt;&lt;p&gt;Now with the different techniques in place, especially with the noise, our contact shadows is as good as I can get it. However it&amp;rsquo;s still too many samples, texture reads seem to be the main performance bottleneck so I will reduce the quality all the way down 8 samples, which is actually usually the common sample count even in unreal&amp;rsquo;s own contact-shadow implementation.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt;1
+&lt;/span&gt;&lt;span class="lnt"&gt;2
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-HLSL" data-lang="HLSL"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//dropped from 32 to 8&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="cp"&gt;#define CONTACT_SHADOWS_SAMPLES 8&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p float="left"&gt;
+&lt;img src="content/contact-shadows-random-clip-8-naked.jpg" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Contact Shadows with Interleaved Gradient Noise 8 Samples&lt;/em&gt;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/contact-shadows-random-clip-8-naked.jpg" width="49%" /&gt;
+&lt;img src="content/contact-shadows-random-clip-32-naked.jpg" width="49%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Left: 8 samples | Right: 32 samples&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;It still looks suprisingly good! Now definetly when you compare the shadows near the contacts of objects are much weaker, and this is because with 8 samples now, the step size is much larger now than it was with 32. To compensate for this, we can knock down the max ray length so the step size is a little closer together. This does mean that we will lose out on some slightly longer shadows, but in turn we will regain our sharper contact shadows.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt;1
+&lt;/span&gt;&lt;span class="lnt"&gt;2
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-HLSL" data-lang="HLSL"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//dropped from 100 to 50&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="cp"&gt;#define CONTACT_SHADOWS_RAY_LENGTH 50.0&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p float="left"&gt;
+&lt;img src="content/contact-shadows-random-clip-8-half-naked.jpg" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;Still looking fantastic! The shadows near geometry contacts regained their sharpness/intensity. Importantly I can now see the finer details of clouds hair casting shadows on his face more clearly, and same for all of the foliage on the ground.&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/contact-shadows-random-clip-8-half-naked.jpg" width="49%" /&gt;
+&lt;img src="content/contact-shadows-random-clip-8-naked.jpg" width="49%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Left: 8 samples 50 ray length | Right: 8 samples 100 ray length&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Now&amp;hellip; we dropped both the sample count and ray length quite a bit, so&amp;hellip; what are the final timings now?&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/timing-final.png" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;Roughly &lt;code&gt;0.44ms&lt;/code&gt;, that&amp;rsquo;s sweet! Our contact shadows now is way more optimized than where it started out, and still can pack quite a punch to the final image all for a reasonable cost!&lt;/p&gt;
+&lt;p&gt;Now as a refresher let&amp;rsquo;s do some timing comparisons, remember that the original game shader in it&amp;rsquo;s entirety was the following&amp;hellip;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/timing-original-shader.png" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;Roughly &lt;code&gt;0.40ms&lt;/code&gt;, so actually funny enough our reverse engineered shader + the contact shadows are almost at the same timing value now + &lt;code&gt;0.04ms - 0.05ms&lt;/code&gt; but let&amp;rsquo;s not get ahead of ourselves. The reverse engineered shader timings without contact shadows was the following&amp;hellip;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/timing-base.png" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;Roughly &lt;code&gt;0.2ms - 0.21ms&lt;/code&gt;, and now with the optimized contact shadows putting us at &lt;code&gt;0.44ms&lt;/code&gt; this means that the contact shadows we added is roughly &lt;code&gt;0.23ms&lt;/code&gt; which is actually not too bad considering we are running at 4k (3840x2160). That&amp;rsquo;s good, and now we have something that radically transforms the look of the game specially in these areas that adds a large amount of detail for a relatively small cost!&lt;/p&gt;
+&lt;p&gt;&lt;a class="link" href="#timings-on-1920x1080-and-3840x2160" &gt;&lt;em&gt;NOTE: Click here if you want to see 1920x1080 timings.&lt;/em&gt;&lt;/a&gt;&lt;/p&gt;
+&lt;h4 id="bonus-checkerboard-rendering-optimization"&gt;&lt;a href="#bonus-checkerboard-rendering-optimization" class="header-anchor"&gt;&lt;/a&gt;Bonus: Checkerboard Rendering Optimization
+&lt;/h4&gt;&lt;p&gt;&lt;em&gt;Spoiler: Leaving this as a bonus as this unfortunately doesn&amp;rsquo;t help that much, but sharing this anyway.&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;One small optimization idea we can do if we are really trying to squeeze as much as possible out of this, is to do checkerboard rendering. This will definetly drop the quality of the shadows a bit but if we are trying to claw back every ounce that we possibly can this is something that we can do.&lt;/p&gt;
+&lt;p&gt;The idea is simple, we only do contact shadows for every other pixel within a 2x2 grid. For the other pixels within the same grid we skip doing contact shadows. So out of the 2x2 pixel block which has 4 pixels total, only 2 pixels do contact shadows, the other 2 are skipped entirely.&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/checkerboard_contact_shadows.svg" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;Now because Rebirth is using TAA later in the pipeline, and we are already relying on it to help cleanup the resolve of our shadows, for the checkerboard pattern it would also be wise to flip the pattern every other frame so we can average results over time within the 2x2 pixel grid.&lt;/p&gt;
+&lt;p&gt;The code for it is simple, we calculate the 2x2 checkerboard pattern and then wrap our contact shadows call within a conditional.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt; 1
+&lt;/span&gt;&lt;span class="lnt"&gt; 2
+&lt;/span&gt;&lt;span class="lnt"&gt; 3
+&lt;/span&gt;&lt;span class="lnt"&gt; 4
+&lt;/span&gt;&lt;span class="lnt"&gt; 5
+&lt;/span&gt;&lt;span class="lnt"&gt; 6
+&lt;/span&gt;&lt;span class="lnt"&gt; 7
+&lt;/span&gt;&lt;span class="lnt"&gt; 8
+&lt;/span&gt;&lt;span class="lnt"&gt; 9
+&lt;/span&gt;&lt;span class="lnt"&gt;10
+&lt;/span&gt;&lt;span class="lnt"&gt;11
+&lt;/span&gt;&lt;span class="lnt"&gt;12
+&lt;/span&gt;&lt;span class="lnt"&gt;13
+&lt;/span&gt;&lt;span class="lnt"&gt;14
+&lt;/span&gt;&lt;span class="lnt"&gt;15
+&lt;/span&gt;&lt;span class="lnt"&gt;16
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-HLSL" data-lang="HLSL"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;contactShadow&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mf"&gt;1.0f&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="c1"&gt;//start off with full visibility&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//do a simple 2x2 checkerboard&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;uint2&lt;/span&gt; &lt;span class="n"&gt;pixel&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kt"&gt;uint2&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;vector_svPosition&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xy&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;bool&lt;/span&gt; &lt;span class="n"&gt;checkerboardTest&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;pixel&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;x&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;pixel&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;y&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;View_TemporalAAParams&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;x&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;%&lt;/span&gt; &lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//do contact shadows only for 2 pixels within the 2x2 block&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//on the next frame the pattern will shift and we will do the other 2 pixels...&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="k"&gt;if&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;checkerboardTest&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="p"&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;contactShadow&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;ContactShadowClipSpace&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;vector_worldPosition&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xyz&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;vector_normalDirection&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;vector_lightDirection&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;random&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p float="left"&gt;
+&lt;img src="content/checkerboard-off.png" width="49%" /&gt;
+&lt;img src="content/checkerboard-on.png" width="49%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Left: Checkerboard Off | Right: Checkerboard On&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Intresting&amp;hellip; but now the shadows look half as intense now and there is a bunch of holes in the final image! TAA could potentially fill it in but the final look may appear much softer than it&amp;rsquo;s intended to be&amp;hellip; can we somehow fill in those holes?&lt;/p&gt;
+&lt;p&gt;The answer is yes we can! Using an HLSL built-in function called &lt;a class="link" href="https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/quadreadlaneat" target="_blank" rel="noopener"
+&gt;QuadReadLaneAt&lt;/a&gt;. What is that? Well, time for some quick context&amp;hellip;&lt;/p&gt;
+&lt;p&gt;Modern GPUs execute pixel shaders in small 2×2 pixel groups known as quads. In &lt;a class="link" href="https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/hlsl-shader-model-6-0-features-for-direct3d-12" target="_blank" rel="noopener"
+&gt;Shader Model 6&lt;/a&gt; we actually get access to this hardware behavior, allowing us to read values from neighboring lanes within the current pixel quad.&lt;/p&gt;
+&lt;p&gt;Ok cool, let&amp;rsquo;s do it and get the values that are in the other lanes!&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;NOTE: QuadReadLaneAt and it&amp;rsquo;s sibling functions are apart of &lt;a class="link" href="https://learn.microsoft.com/en-us/windows/win32/direct3dhlsl/hlsl-shader-model-6-0-features-for-direct3d-12" target="_blank" rel="noopener"
+&gt;Shader Model 6&lt;/a&gt;, which is essentially hardware that supports DX12, and for the most part this game is already on DX12.&lt;/em&gt;&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt;1
+&lt;/span&gt;&lt;span class="lnt"&gt;2
+&lt;/span&gt;&lt;span class="lnt"&gt;3
+&lt;/span&gt;&lt;span class="lnt"&gt;4
+&lt;/span&gt;&lt;span class="lnt"&gt;5
+&lt;/span&gt;&lt;span class="lnt"&gt;6
+&lt;/span&gt;&lt;span class="lnt"&gt;7
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-HLSL" data-lang="HLSL"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//NOTE: after the if(checkerboardTest) block we do a quad read&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//read other pixel lanes, there should be a shadow in one of them&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;lane0&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;QuadReadLaneAt&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;contactShadow&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mo"&gt;0&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;lane1&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;QuadReadLaneAt&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;contactShadow&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;lane2&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;QuadReadLaneAt&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;contactShadow&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;2&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;lane3&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;QuadReadLaneAt&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;contactShadow&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;3&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;Each lane contains the value of contactShadow from one of the four pixels in the current 2×2 quad. This means a pixel can directly access results that were calculated by its neighbors without requiring any additional texture lookups or passes. In this case with the checkerboard pattern we already have, which is in a 2x2 pattern already, turns out this a perfect use case for these functions!&lt;/p&gt;
+&lt;p&gt;Now because all four pixels belong to the same quad, the skipped pixels can read the results from the pixels that performed the raymarch, and we can reconstruct a pretty decent reasonable approximation of the missing shadow information.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt; 1
+&lt;/span&gt;&lt;span class="lnt"&gt; 2
+&lt;/span&gt;&lt;span class="lnt"&gt; 3
+&lt;/span&gt;&lt;span class="lnt"&gt; 4
+&lt;/span&gt;&lt;span class="lnt"&gt; 5
+&lt;/span&gt;&lt;span class="lnt"&gt; 6
+&lt;/span&gt;&lt;span class="lnt"&gt; 7
+&lt;/span&gt;&lt;span class="lnt"&gt; 8
+&lt;/span&gt;&lt;span class="lnt"&gt; 9
+&lt;/span&gt;&lt;span class="lnt"&gt;10
+&lt;/span&gt;&lt;span class="lnt"&gt;11
+&lt;/span&gt;&lt;span class="lnt"&gt;12
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-HLSL" data-lang="HLSL"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//NOTE: another conditional after the quad reads&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="k"&gt;if&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="o"&gt;!&lt;/span&gt;&lt;span class="n"&gt;checkerboardTest&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="p"&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="c1"&gt;//reconstruction style 1:&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="c1"&gt;//this is simple, if any of the pixels are 0 (shadow), USE IT!&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;contactShadow&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;min&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;min&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;lane0&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;lane1&lt;/span&gt;&lt;span class="p"&gt;),&lt;/span&gt; &lt;span class="nb"&gt;min&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;lane2&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;lane3&lt;/span&gt;&lt;span class="p"&gt;));&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="c1"&gt;//reconstruction style 2:&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="c1"&gt;//averaging all 4 lane values (and pumping contrast a bit)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="c1"&gt;//the apperance is softer than doing min&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;contactShadow&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;mad&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;lane0&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;lane1&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;lane2&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;lane3&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mf"&gt;0.5f&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mf"&gt;1.0f&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p float="left"&gt;
+&lt;img src="content/checkerboard-on-min-reconstruction.png" width="49%" /&gt;
+&lt;img src="content/checkerboard-on-avg-reconstruction.png" width="49%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Left: Checkerboard with Min Reconstruction | Right: Checkerboard with Averaged Reconstruction&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Doesn&amp;rsquo;t look too bad actually! Considering also that we are using TAA later in the pipeline &lt;em&gt;(and the noise changes every frame, same with the checkerboard pattern)&lt;/em&gt; during motion this should resolve into something that looks pretty clean. It won&amp;rsquo;t be as good as the full per-pixel quality without checkerboarding, but this isn&amp;rsquo;t that big of a degredation either, now is it worth it though?&lt;/p&gt;
+&lt;p&gt;Here are the final timings now&amp;hellip;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/timing-checkerboard.png" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;0.43ms&lt;/code&gt;, not as big as I was expecting. It&amp;rsquo;s definetly a net positive for performance but only by a small margin. Like I said earlier if you really want to squeeze every ounce out of this this is something that you can do that doesn&amp;rsquo;t mangle your final effect too bad.&lt;/p&gt;
+&lt;h4 id="bonus-dual-depth-sampling"&gt;&lt;a href="#bonus-dual-depth-sampling" class="header-anchor"&gt;&lt;/a&gt;Bonus: Dual Depth Sampling
+&lt;/h4&gt;&lt;p&gt;Another quality bonus, but in &amp;ldquo;&lt;a class="link" href="https://www.youtube.com/watch?v=jusWW2pPnA0" target="_blank" rel="noopener"
+&gt;Rendering Tiny Glades With Entirely Too Much Ray Marching&lt;/a&gt;&amp;rdquo; it was demonstrated that for their contact shadow implementations they improved shading results by sampling the depth textures twice &lt;em&gt;(One with point sampling, the other with bilinear filtering)&lt;/em&gt;. The result was a very noticable reduction in contact shadow self-occlusion issues.&lt;/p&gt;
+&lt;p&gt;The only reason I&amp;rsquo;m not going forward with this, is while it does improve the quality, it means 1 extra depth texture sample now in the loop &lt;em&gt;(2 depth texture samples)&lt;/em&gt; which makes it quite a bit more expensive.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt; 1
+&lt;/span&gt;&lt;span class="lnt"&gt; 2
+&lt;/span&gt;&lt;span class="lnt"&gt; 3
+&lt;/span&gt;&lt;span class="lnt"&gt; 4
+&lt;/span&gt;&lt;span class="lnt"&gt; 5
+&lt;/span&gt;&lt;span class="lnt"&gt; 6
+&lt;/span&gt;&lt;span class="lnt"&gt; 7
+&lt;/span&gt;&lt;span class="lnt"&gt; 8
+&lt;/span&gt;&lt;span class="lnt"&gt; 9
+&lt;/span&gt;&lt;span class="lnt"&gt;10
+&lt;/span&gt;&lt;span class="lnt"&gt;11
+&lt;/span&gt;&lt;span class="lnt"&gt;12
+&lt;/span&gt;&lt;span class="lnt"&gt;13
+&lt;/span&gt;&lt;span class="lnt"&gt;14
+&lt;/span&gt;&lt;span class="lnt"&gt;15
+&lt;/span&gt;&lt;span class="lnt"&gt;16
+&lt;/span&gt;&lt;span class="lnt"&gt;17
+&lt;/span&gt;&lt;span class="lnt"&gt;18
+&lt;/span&gt;&lt;span class="lnt"&gt;19
+&lt;/span&gt;&lt;span class="lnt"&gt;20
+&lt;/span&gt;&lt;span class="lnt"&gt;21
+&lt;/span&gt;&lt;span class="lnt"&gt;22
+&lt;/span&gt;&lt;span class="lnt"&gt;23
+&lt;/span&gt;&lt;span class="lnt"&gt;24
+&lt;/span&gt;&lt;span class="lnt"&gt;25
+&lt;/span&gt;&lt;span class="lnt"&gt;26
+&lt;/span&gt;&lt;span class="lnt"&gt;27
+&lt;/span&gt;&lt;span class="lnt"&gt;28
+&lt;/span&gt;&lt;span class="lnt"&gt;29
+&lt;/span&gt;&lt;span class="lnt"&gt;30
+&lt;/span&gt;&lt;span class="lnt"&gt;31
+&lt;/span&gt;&lt;span class="lnt"&gt;32
+&lt;/span&gt;&lt;span class="lnt"&gt;33
+&lt;/span&gt;&lt;span class="lnt"&gt;34
+&lt;/span&gt;&lt;span class="lnt"&gt;35
+&lt;/span&gt;&lt;span class="lnt"&gt;36
+&lt;/span&gt;&lt;span class="lnt"&gt;37
+&lt;/span&gt;&lt;span class="lnt"&gt;38
+&lt;/span&gt;&lt;span class="lnt"&gt;39
+&lt;/span&gt;&lt;span class="lnt"&gt;40
+&lt;/span&gt;&lt;span class="lnt"&gt;41
+&lt;/span&gt;&lt;span class="lnt"&gt;42
+&lt;/span&gt;&lt;span class="lnt"&gt;43
+&lt;/span&gt;&lt;span class="lnt"&gt;44
+&lt;/span&gt;&lt;span class="lnt"&gt;45
+&lt;/span&gt;&lt;span class="lnt"&gt;46
+&lt;/span&gt;&lt;span class="lnt"&gt;47
+&lt;/span&gt;&lt;span class="lnt"&gt;48
+&lt;/span&gt;&lt;span class="lnt"&gt;49
+&lt;/span&gt;&lt;span class="lnt"&gt;50
+&lt;/span&gt;&lt;span class="lnt"&gt;51
+&lt;/span&gt;&lt;span class="lnt"&gt;52
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-HLSL" data-lang="HLSL"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;ContactShadowClipSpaceDualDepth&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;vector_worldPosition&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;vector_worldNormal&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;vector_worldLightDirection&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;random&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="p"&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;invSamples&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;rcp&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;CONTACT_SHADOWS_SAMPLES&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;rayOrigin&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;vector_worldPosition&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float4&lt;/span&gt; &lt;span class="n"&gt;clipStart&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;mul&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;View_WorldToClip&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;float4&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;rayOrigin&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;));&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float4&lt;/span&gt; &lt;span class="n"&gt;clipEnd&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;mul&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;View_WorldToClip&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="kt"&gt;float4&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;rayOrigin&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;vector_worldLightDirection&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;CONTACT_SHADOWS_RAY_LENGTH&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mi"&gt;1&lt;/span&gt;&lt;span class="p"&gt;));&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;ndcStart&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;clipStart&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xyz&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt; &lt;span class="n"&gt;clipStart&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;w&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float3&lt;/span&gt; &lt;span class="n"&gt;ndcEnd&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;clipEnd&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xyz&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt; &lt;span class="n"&gt;clipEnd&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;w&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;rayLinearStart&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;LinearEyeDepth&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;ndcStart&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;z&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;rayLinearEnd&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;LinearEyeDepth&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;ndcEnd&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;z&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;rayLinearDepth&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;lerp&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;rayLinearStart&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;rayLinearEnd&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;random&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;invSamples&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;rayLinearStep&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;rayLinearEnd&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;rayLinearStart&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;invSamples&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;const&lt;/span&gt; &lt;span class="kt"&gt;float2&lt;/span&gt; &lt;span class="n"&gt;uvScale&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kt"&gt;float2&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="mf"&gt;0.5&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt;&lt;span class="mf"&gt;0.5&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float2&lt;/span&gt; &lt;span class="n"&gt;uvStep&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;ndcEnd&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xy&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;ndcStart&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xy&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;invSamples&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;uvScale&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float2&lt;/span&gt; &lt;span class="n"&gt;uv&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;mad&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;ndcStart&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;xy&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;uvScale&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mf"&gt;0.5&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;+&lt;/span&gt; &lt;span class="n"&gt;uvStep&lt;/span&gt; &lt;span class="o"&gt;*&lt;/span&gt; &lt;span class="n"&gt;random&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="p"&gt;[&lt;/span&gt;&lt;span class="nd"&gt;loop&lt;/span&gt;&lt;span class="p"&gt;]&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;for&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="kt"&gt;int&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="mo"&gt;0&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt; &lt;span class="n"&gt;CONTACT_SHADOWS_SAMPLES&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt; &lt;span class="n"&gt;i&lt;/span&gt;&lt;span class="o"&gt;++&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="p"&gt;{&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="nb"&gt;any&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;uv&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt; &lt;span class="mf"&gt;0.0&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt; &lt;span class="o"&gt;||&lt;/span&gt; &lt;span class="nb"&gt;any&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;uv&lt;/span&gt; &lt;span class="o"&gt;&amp;gt;&lt;/span&gt; &lt;span class="mf"&gt;1.0&lt;/span&gt;&lt;span class="p"&gt;))&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;break&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;pointDepth&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;SceneTexturesStruct_SceneDepthTexture&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SampleLevel&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;View_SharedPointClampedSampler&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;uv&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mo"&gt;0&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;&lt;span class="n"&gt;r&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;bilinearDepth&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;SceneTexturesStruct_SceneDepthTexture&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SampleLevel&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;View_SharedBilinearClampedSampler&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;uv&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mo"&gt;0&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;&lt;span class="n"&gt;r&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float2&lt;/span&gt; &lt;span class="n"&gt;depths&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="kt"&gt;float2&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;pointDepth&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;bilinearDepth&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float2&lt;/span&gt; &lt;span class="n"&gt;linearDepths&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;View_InvDeviceZToWorldZTransform&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;z&lt;/span&gt; &lt;span class="o"&gt;/&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;depths&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;View_InvDeviceZToWorldZTransform&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;w&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;minDepth&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;min&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;linearDepths&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;x&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;linearDepths&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;y&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;maxDepth&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="nb"&gt;max&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;linearDepths&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;x&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;linearDepths&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;y&lt;/span&gt;&lt;span class="p"&gt;);&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;penetration&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;rayLinearDepth&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;minDepth&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;depthDistance&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;maxDepth&lt;/span&gt; &lt;span class="o"&gt;-&lt;/span&gt; &lt;span class="n"&gt;rayLinearDepth&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;if&lt;/span&gt; &lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;depthDistance&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt; &lt;span class="mf"&gt;0.0&lt;/span&gt; &lt;span class="o"&gt;&amp;amp;&amp;amp;&lt;/span&gt; &lt;span class="n"&gt;penetration&lt;/span&gt; &lt;span class="o"&gt;&amp;lt;&lt;/span&gt; &lt;span class="n"&gt;CONTACT_SHADOWS_THICKNESS&lt;/span&gt;&lt;span class="p"&gt;)&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="mf"&gt;0.0&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;rayLinearDepth&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="n"&gt;rayLinearStep&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="n"&gt;uv&lt;/span&gt; &lt;span class="o"&gt;+=&lt;/span&gt; &lt;span class="n"&gt;uvStep&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt; &lt;span class="k"&gt;return&lt;/span&gt; &lt;span class="mf"&gt;1.0&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="p"&gt;}&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p float="left"&gt;
+&lt;img src="content/singleDepth.png" width="49%" /&gt;
+&lt;img src="content/dualDepth.png" width="49%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Left: Single Depth Sample | Right: Point and Bilinear Depth Sampling&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Checking the timings&amp;hellip;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/timing-dual-depth.png" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;0.59ms&lt;/code&gt;, quite a bit more than just singular depth sampling. For that cost to quality ratio I honestly would probably rather just increase sample counts, but you can see the options.&lt;/p&gt;
+&lt;p&gt;But there is an alternative to this!&lt;/p&gt;
+&lt;h4 id="bonus-depth-point-sampling"&gt;&lt;a href="#bonus-depth-point-sampling" class="header-anchor"&gt;&lt;/a&gt;Bonus: Depth Point Sampling
+&lt;/h4&gt;&lt;p&gt;Another intresting idea from the same place again &amp;ldquo;&lt;a class="link" href="https://www.youtube.com/watch?v=jusWW2pPnA0" target="_blank" rel="noopener"
+&gt;Rendering Tiny Glades With Entirely Too Much Ray Marching&lt;/a&gt;&amp;rdquo; for improving the results of their contact shadows was if you are doing just one depth texture sample, doing it with point filtering actually leads to better results in some cases.&lt;/p&gt;
+&lt;div class="highlight"&gt;&lt;div class="chroma"&gt;
+&lt;table class="lntable"&gt;&lt;tr&gt;&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code&gt;&lt;span class="lnt"&gt;1
+&lt;/span&gt;&lt;span class="lnt"&gt;2
+&lt;/span&gt;&lt;span class="lnt"&gt;3
+&lt;/span&gt;&lt;span class="lnt"&gt;4
+&lt;/span&gt;&lt;span class="lnt"&gt;5
+&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;
+&lt;td class="lntd"&gt;
+&lt;pre tabindex="0" class="chroma"&gt;&lt;code class="language-HLSL" data-lang="HLSL"&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//using bilinear depth sampler&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//float sampledDepth = SceneTexturesStruct_SceneDepthTexture.SampleLevel(View_SharedBilinearClampedSampler, vector_sampleUV, 0).r;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="c1"&gt;//using point depth sampler&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;span class="line"&gt;&lt;span class="cl"&gt;&lt;span class="kt"&gt;float&lt;/span&gt; &lt;span class="n"&gt;sampledDepth&lt;/span&gt; &lt;span class="o"&gt;=&lt;/span&gt; &lt;span class="n"&gt;SceneTexturesStruct_SceneDepthTexture&lt;/span&gt;&lt;span class="p"&gt;.&lt;/span&gt;&lt;span class="n"&gt;SampleLevel&lt;/span&gt;&lt;span class="p"&gt;(&lt;/span&gt;&lt;span class="n"&gt;View_SharedPointClampedSampler&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="n"&gt;vector_sampleUV&lt;/span&gt;&lt;span class="p"&gt;,&lt;/span&gt; &lt;span class="mo"&gt;0&lt;/span&gt;&lt;span class="p"&gt;).&lt;/span&gt;&lt;span class="n"&gt;r&lt;/span&gt;&lt;span class="p"&gt;;&lt;/span&gt;
+&lt;/span&gt;&lt;/span&gt;&lt;/code&gt;&lt;/pre&gt;&lt;/td&gt;&lt;/tr&gt;&lt;/table&gt;
+&lt;/div&gt;
+&lt;/div&gt;&lt;p&gt;These screenshots are from a different capture but it&amp;rsquo;s one case where the benifits of using point sampling were quite obvious.&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/bilinear-sampling.png" width="49%" /&gt;
+&lt;img src="content/point-sampling.png" width="49%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Left: Single Bilinear Depth Sampling | Right: Single Point Depth Sampling&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;No timings on this because it&amp;rsquo;s effectively free. All we are doing is just sampling the same depth texture that we did before but with point filtering instead of bilinear, Helping with self-occlusion artifacts.&lt;/p&gt;
+&lt;h2 id="final-results"&gt;&lt;a href="#final-results" class="header-anchor"&gt;&lt;/a&gt;Final Results
+&lt;/h2&gt;&lt;p&gt;With that we have sucessfully managed to implement contact shadows into FF7 Rebirth! For showcase let&amp;rsquo;s show the raw light attenuation term that the game was originally using, and progressively add the techniques that we introduced.&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/original-attenuation.jpg" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Light Attenuation: Shadowmaps * NdotL (Original)&lt;/em&gt;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/attenuation-micro.jpg" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Light Attenuation: Shadowmaps * NdotL * Micro Shadows&lt;/em&gt;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/attenuation-micro-contact.jpg" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Light Attenuation: Shadowmaps * NdotL * Micro Shadows * Contact Shadows&lt;/em&gt;&lt;/p&gt;
+&lt;p&gt;Now with our final optimized results&amp;hellip;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/contact-shadows-optimized-result.jpg" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;It&amp;rsquo;s looking better than ever!&lt;/p&gt;
+&lt;p&gt;Now I do want to point out something very important, because in deferred rendering, generally every light are is shaded in a full screen pixel draw. It can be any light, doesn&amp;rsquo;t have to just be directional lighting, so contact shadows can also be used for local lights for the same cost as we were doing before.&lt;/p&gt;
+&lt;p&gt;This is quite big because arguably in some areas within rebirth this is the one place that would definetly give you the most bang for your buck as some of these smaller local lights have shadow casting completely disabled. Adding contact shadows would allow them to cheaply add shadow detail back into the scene.&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/local-light-original.jpg" width="49%" /&gt;
+&lt;img src="content/local-light-contacts.jpg" width="49%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;Left: Original | Right: Micro Shadows + Contact Shadowing for local Light passes (point/spot/area lights)&lt;/em&gt;&lt;/p&gt;
+&lt;h2 id="video-preview"&gt;&lt;a href="#video-preview" class="header-anchor"&gt;&lt;/a&gt;Video Preview
+&lt;/h2&gt;&lt;p&gt;Now this was done just through RenderDoc but there is a whole other part of this story&amp;hellip;&lt;/p&gt;
+&lt;p&gt;I built a Shader Injector mod &lt;em&gt;(that is a work in progress at the time of writing)&lt;/em&gt;, that allows me to actually take this modified RenderDoc shader, compile it and replace the original shader bytecode at runtime within the actual game so I could play with this modified shader during gameplay&amp;hellip; and it&amp;rsquo;s awesome!&lt;/p&gt;
+&lt;p&gt;&lt;a class="link" href="https://www.youtube.com/watch?v=ta1WpIeoP1s" target="_blank" rel="noopener"
+&gt;Shader Injector Mod Preview Video&lt;/a&gt;&lt;/p&gt;
+&lt;h2 id="timings-on-1920x1080-and-3840x2160"&gt;&lt;a href="#timings-on-1920x1080-and-3840x2160" class="header-anchor"&gt;&lt;/a&gt;Timings on 1920x1080 and 3840x2160
+&lt;/h2&gt;&lt;p&gt;This is an extra bonus but I wanted to see how the timings scaled when going from native 3840x2160 that we were working with, down to 1920x1080. Again using an RTX 3080, playing in the same game area.&lt;/p&gt;
+&lt;p&gt;&lt;em&gt;&lt;strong&gt;Frame Budget Guide&lt;/strong&gt;&lt;/em&gt;&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;30 FPS&lt;/strong&gt; Frame-Time Budget: 33.33ms&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;60 FPS&lt;/strong&gt; Frame-Time Budget: 16.67ms&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;120 FPS&lt;/strong&gt; Frame-Time Budget: 8.33ms&lt;/li&gt;
+&lt;/ul&gt;
+&lt;h4 id="3840-x-2160"&gt;&lt;a href="#3840-x-2160" class="header-anchor"&gt;&lt;/a&gt;3840 x 2160
+&lt;/h4&gt;&lt;p&gt;Quick refresher, timings on an RTX 3080, maxed out at native 3840x2160 were as follows&amp;hellip;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/timing-entire-frame.png" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;Roughly &lt;code&gt;34.5ms&lt;/code&gt;, effectively 30 FPS. The timings for the original Directional Pixel Light Shader that the game is using&amp;hellip;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/timing-original-shader.png" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;0.38ms - 0.40ms&lt;/code&gt;, then the reverse engineered shader base&amp;hellip;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/timing-base.png" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;0.208ms - 0.21ms&lt;/code&gt;, then adding the micro shadows + contact shadows&amp;hellip;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/timing-final.png" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;0.44ms&lt;/code&gt;, which is not bad. Quick subtraction math yields that the contact shadows implementation at native 4K on an RTX 3080 costs &lt;code&gt;0.23ms&lt;/code&gt;.&lt;/p&gt;
+&lt;h4 id="1920-x-1080"&gt;&lt;a href="#1920-x-1080" class="header-anchor"&gt;&lt;/a&gt;1920 x 1080
+&lt;/h4&gt;&lt;p&gt;Now we drop the resolution to 1080p which would give us significant performane gains. First looking at the total frametime of the game, the graphics settings are maxed out just like before but the resolution is now native 1920x1080.&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/timing-original-full-1080.png" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;Roughly &lt;code&gt;14.23ms&lt;/code&gt;, which is accurate. Dropping the game down to that resolution gives me much better performance, allowing me to hit 60 FPS+ framerate. Let&amp;rsquo;s check the timing of the original shader at this resolution.&lt;/p&gt;
+&lt;p&gt;It&amp;rsquo;s worth pointing out here that because things are much &amp;ldquo;faster&amp;rdquo; the milisecond timings values are much smaller, which makes it a little more difficult. &lt;em&gt;(RenderDoc has quite a bit of noise when doing a replay timings, some of these values may not be 100% accurate)&lt;/em&gt; But anyway, lets check the original shader!&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/timing-original-shader-1080.png" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;0.081ms&lt;/code&gt;, that&amp;rsquo;s pretty small, which is what you want, now let&amp;rsquo;s plug in the reverse engineered shader with it&amp;rsquo;s main effects &lt;em&gt;(micro shadows, contact shadows)&lt;/em&gt; disabled&amp;hellip;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/timing-base-1080.png" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;0.055ms&lt;/code&gt;, just like we saw before the reverse engineered shader is lighter. I take this with a grain of salt as I&amp;rsquo;m sure there are some shading terms I&amp;rsquo;m missing, even though visually it looks almost identical. Now let&amp;rsquo;s enable micro-shadows and contact-shadows &lt;em&gt;(the main effect)&lt;/em&gt; and check the final timings&amp;hellip;&lt;/p&gt;
+&lt;p float="left"&gt;
+&lt;img src="content/timing-final-1080.png" width="100%" /&gt;
+&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;0.088ms&lt;/code&gt;, yep it lines up with what we were saw prior. Doing the quick subtraction math yields that at native resolution 1920x1080 on an RTX 3080 in the same game area, contact shadows cost roughly &lt;code&gt;0.033ms&lt;/code&gt;, which is not bad at all!&lt;/p&gt;
+&lt;p&gt;For this frame we are still in excess of &lt;code&gt;2.5ms&lt;/code&gt; before we hit the 60 FPS frame-time ceiling. If one desired that is plenty of room to scale up the effect quality wise to get some more oompf!&lt;/p&gt;
+&lt;h1 id="references--sources"&gt;&lt;a href="#references--sources" class="header-anchor"&gt;&lt;/a&gt;References / Sources
+&lt;/h1&gt;&lt;p&gt;List of references that helped with my implementations and understanding.&lt;/p&gt;
+&lt;ul&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;a class="link" href="https://dev.epicgames.com/documentation/unreal-engine/contact-shadows-in-unreal-engine?lang=en-US" target="_blank" rel="noopener"
+&gt;Unreal Engine Contact Shadows documentation&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;a class="link" href="https://dev.epicgames.com/documentation/unreal-engine/use-cascaded-shadows?application_version=4.27" target="_blank" rel="noopener"
+&gt;Unreal Engine CSM documentation&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;a class="link" href="https://www.youtube.com/watch?v=jusWW2pPnA0" target="_blank" rel="noopener"
+&gt;Rendering Tiny Glades With Entirely Too Much Ray Marching&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;a class="link" href="https://advances.realtimerendering.com/other/2016/naughty_dog/" target="_blank" rel="noopener"
+&gt;Technical Art of Uncharted 4&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;a class="link" href="https://panoskarabelas.com/posts/screen_space_shadows/" target="_blank" rel="noopener"
+&gt;Panos Karabelas / Screen space shadows&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;a class="link" href="https://blog.demofox.org/2022/01/01/interleaved-gradient-noise-a-different-kind-of-low-discrepancy-sequence/" target="_blank" rel="noopener"
+&gt;demofox / Interleaved Gradient Noise: A Different Kind of Low Discrepancy Sequence&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;a class="link" href="https://blog.demofox.org/2018/01/30/what-the-heck-is-blue-noise/" target="_blank" rel="noopener"
+&gt;demofox / What the Heck is Blue Noise?&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;li&gt;
+&lt;p&gt;&lt;a class="link" href="https://renderdoc.org/" target="_blank" rel="noopener"
+&gt;RenderDoc&lt;/a&gt;&lt;/p&gt;
+&lt;/li&gt;
+&lt;/ul&gt;
+&lt;p&gt;&lt;em&gt;By: David Matos&lt;/em&gt;&lt;/p&gt;</description></item></channel></rss>
